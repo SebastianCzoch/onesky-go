@@ -7,6 +7,8 @@ import (
 	"strconv"
 	"encoding/hex"
 	"net/url"
+	"net/http"
+	"io/ioutil"
 	"fmt"
 )
 
@@ -33,12 +35,28 @@ var apiEndpoints = map[string]apiEndpoint{
 }
 
 func (o *Options) DownloadFile(fileName, locale string) (string, error) {
-	_, err := o.getUrlForEndpoint("getFile");
+	_, err := o.getUrlForEndpoint("getFile")
 	if err != nil {
 		return "", err
 	}
 	
-	return "", nil
+	address, err := o.getUrlForEndpoint("getFile")
+	if err != nil {
+		return "", err
+	}
+	
+	response, err := http.Get(address)
+	if err != nil {
+		return "", err
+	}
+
+	res, err := ioutil.ReadAll(response.Body)
+	response.Body.Close()
+	if err != nil {
+		return "", err
+	}
+	
+	return string(res), nil
 }
 
 func (o *Options) getAuthHashAndTime() (string, string) {

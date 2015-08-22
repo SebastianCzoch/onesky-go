@@ -3,8 +3,6 @@ package onesky
 import (
 	"testing"
 	"net/url"
-	// "crypto/md5"
-	// "time"
 	"regexp"
 )
 
