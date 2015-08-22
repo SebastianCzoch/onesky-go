@@ -1,14 +1,22 @@
 package onesky
 
 import (
+	"errors"
 	"crypto/md5"
 	"time"
 	"strconv"
 	"encoding/hex"
+	"net/url"
 )
 
-const API_ADDRESS = "https://platform.api.onesky.io/"
+const API_ADDRESS = "https://platform.api.onesky.io"
 const API_VERSION = "1"
+
+type Options struct {
+	Secret    string
+	ApiKey    string
+	ProjectID int
+}
 
 type apiEndpoint struct {
 	path string
@@ -23,12 +31,6 @@ var apiEndpoints = map[string]apiEndpoint{
 	"getFile" : apiEndpoint{"projects/translations", "GET"},
 }
 
-type Options struct {
-	Secret    string
-	ApiKey    string
-	ProjectID int
-}
-
 func (o *Options) DownloadFile(fileName, locale string) {
 
 }
@@ -41,6 +43,15 @@ func (o *Options) getAuthHashAndTime() (string, string) {
 	return hex.EncodeToString(hasher.Sum(nil)), time
 }
 
-func (o *Options) getUrlForAction(action string) {
+func (o *Options) getUrlForEndpoint(endpointName string) (string, error) {
+	if _, ok := apiEndpoints[endpointName]; !ok {
+		return "", errors.New("Endpoint not found!")
+	}
+
+	address, err := url.Parse(API_ADDRESS + "/" + API_VERSION + "/" + apiEndpoints[endpointName].path)
+	if err != nil {
+		return "", errors.New("Can not parse url address!")
+	}
 	
+	return address.String(), nil	
 }
