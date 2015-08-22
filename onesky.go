@@ -15,7 +15,7 @@ import (
 const API_ADDRESS = "https://platform.api.onesky.io"
 const API_VERSION = "1"
 
-type Options struct {
+type Client struct {
 	Secret    string
 	ApiKey    string
 	ProjectID int
@@ -34,13 +34,13 @@ var apiEndpoints = map[string]apiEndpoint{
 	"getFile" : apiEndpoint{"projects/%d/translations", "GET"},
 }
 
-func (o *Options) DownloadFile(fileName, locale string) (string, error) {
-	_, err := o.getUrlForEndpoint("getFile")
+func (c *Client) DownloadFile(fileName, locale string) (string, error) {
+	_, err := c.getUrlForEndpoint("getFile")
 	if err != nil {
 		return "", err
 	}
 	
-	address, err := o.getUrlForEndpoint("getFile")
+	address, err := c.getUrlForEndpoint("getFile")
 	if err != nil {
 		return "", err
 	}
@@ -59,20 +59,20 @@ func (o *Options) DownloadFile(fileName, locale string) (string, error) {
 	return string(res), nil
 }
 
-func (o *Options) getAuthHashAndTime() (string, string) {
+func (c *Client) getAuthHashAndTime() (string, string) {
 	hasher := md5.New()
 	time := strconv.Itoa(int(time.Now().Unix()))
-    hasher.Write([]byte(time + o.Secret))
+    hasher.Write([]byte(time + c.Secret))
 
 	return hex.EncodeToString(hasher.Sum(nil)), time
 }
 
-func (o *Options) getUrlForEndpoint(endpointName string) (string, error) {
+func (c *Client) getUrlForEndpoint(endpointName string) (string, error) {
 	if _, ok := apiEndpoints[endpointName]; !ok {
 		return "", errors.New("Endpoint not found!")
 	}
 
-	urlWithProjectID := fmt.Sprintf(apiEndpoints[endpointName].path, o.ProjectID)
+	urlWithProjectID := fmt.Sprintf(apiEndpoints[endpointName].path, c.ProjectID)
 	address, err := url.Parse(API_ADDRESS + "/" + API_VERSION + "/" + urlWithProjectID)
 	if err != nil {
 		return "", errors.New("Can not parse url address!")
@@ -81,14 +81,14 @@ func (o *Options) getUrlForEndpoint(endpointName string) (string, error) {
 	return address.String(), nil	
 }
 
-func (o *Options) getFinalEndpointUrl(endpointUrl string, additionalArgs url.Values) (string, error) {
-	address, err := url.Parse(fmt.Sprintf(endpointUrl, o.ProjectID))
+func (c *Client) getFinalEndpointUrl(endpointUrl string, additionalArgs url.Values) (string, error) {
+	address, err := url.Parse(fmt.Sprintf(endpointUrl, c.ProjectID))
 	if err != nil {
 		return "", err
 	}
-	hash, timestamp := o.getAuthHashAndTime();
+	hash, timestamp := c.getAuthHashAndTime();
 	
-	additionalArgs.Set("api_key", o.ApiKey)
+	additionalArgs.Set("api_key", c.ApiKey)
 	additionalArgs.Set("timestamp", timestamp)
 	additionalArgs.Set("dev_hash", hash)
 	
