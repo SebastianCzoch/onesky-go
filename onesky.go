@@ -7,6 +7,7 @@ import (
 	"strconv"
 	"encoding/hex"
 	"net/url"
+	"fmt"
 )
 
 const API_ADDRESS = "https://platform.api.onesky.io"
@@ -28,11 +29,16 @@ type api struct {
 }
 
 var apiEndpoints = map[string]apiEndpoint{
-	"getFile" : apiEndpoint{"projects/translations", "GET"},
+	"getFile" : apiEndpoint{"projects/%d/translations", "GET"},
 }
 
-func (o *Options) DownloadFile(fileName, locale string) {
-
+func (o *Options) DownloadFile(fileName, locale string) (string, error) {
+	_, err := o.getUrlForEndpoint("getFile");
+	if err != nil {
+		return "", err
+	}
+	
+	return "", nil
 }
 
 func (o *Options) getAuthHashAndTime() (string, string) {
@@ -48,10 +54,25 @@ func (o *Options) getUrlForEndpoint(endpointName string) (string, error) {
 		return "", errors.New("Endpoint not found!")
 	}
 
-	address, err := url.Parse(API_ADDRESS + "/" + API_VERSION + "/" + apiEndpoints[endpointName].path)
+	urlWithProjectID := fmt.Sprintf(apiEndpoints[endpointName].path, o.ProjectID)
+	address, err := url.Parse(API_ADDRESS + "/" + API_VERSION + "/" + urlWithProjectID)
 	if err != nil {
 		return "", errors.New("Can not parse url address!")
 	}
 	
 	return address.String(), nil	
+}
+
+func (o *Options) getFinalEndpointUrl(endpointUrl string, additionalArgs url.Values) (string, error) {
+	address, err := url.Parse(fmt.Sprintf(endpointUrl, o.ProjectID))
+	if err != nil {
+		return "", err
+	}
+	hash, timestamp := o.getAuthHashAndTime();
+	
+	additionalArgs.Set("api_key", o.ApiKey)
+	additionalArgs.Set("timestamp", timestamp)
+	additionalArgs.Set("dev_hash", hash)
+	
+	return address.String() + "?" + additionalArgs.Encode(), nil
 }
