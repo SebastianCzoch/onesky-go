@@ -40,11 +40,23 @@ func (c *Client) DownloadFile(fileName, locale string) (string, error) {
 		return "", err
 	}
 	
-	address, err := c.getUrlForEndpoint("getFile")
+	endpointUrl, err := c.getUrlForEndpoint("getFile")
 	if err != nil {
 		return "", err
 	}
 	
+	v := url.Values{}
+	v.Set("locale", locale)
+	v.Set("source_file_name", fileName)
+	address, err := c.getFinalEndpointUrl(endpointUrl, v)
+	res, err := getFileAsString(address);
+	if err != nil {
+		return "", nil
+	}
+	return res, nil
+}
+
+func getFileAsString(address string) (string, error) {
 	response, err := http.Get(address)
 	if err != nil {
 		return "", err
@@ -82,7 +94,7 @@ func (c *Client) getUrlForEndpoint(endpointName string) (string, error) {
 }
 
 func (c *Client) getFinalEndpointUrl(endpointUrl string, additionalArgs url.Values) (string, error) {
-	address, err := url.Parse(fmt.Sprintf(endpointUrl, c.ProjectID))
+	address, err := url.Parse(endpointUrl)
 	if err != nil {
 		return "", err
 	}
