@@ -1,15 +1,15 @@
 package onesky
 
 import (
-	"errors"
 	"crypto/md5"
-	"time"
-	"strconv"
 	"encoding/hex"
-	"net/url"
-	"net/http"
-	"io/ioutil"
+	"errors"
 	"fmt"
+	"io/ioutil"
+	"net/http"
+	"net/url"
+	"strconv"
+	"time"
 )
 
 const API_ADDRESS = "https://platform.api.onesky.io"
@@ -22,7 +22,7 @@ type Client struct {
 }
 
 type apiEndpoint struct {
-	path string
+	path   string
 	method string
 }
 
@@ -31,7 +31,7 @@ type api struct {
 }
 
 var apiEndpoints = map[string]apiEndpoint{
-	"getFile" : apiEndpoint{"projects/%d/translations", "GET"},
+	"getFile": apiEndpoint{"projects/%d/translations", "GET"},
 }
 
 func (c *Client) DownloadFile(fileName, locale string) (string, error) {
@@ -39,17 +39,17 @@ func (c *Client) DownloadFile(fileName, locale string) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	
+
 	endpointUrl, err := c.getUrlForEndpoint("getFile")
 	if err != nil {
 		return "", err
 	}
-	
+
 	v := url.Values{}
 	v.Set("locale", locale)
 	v.Set("source_file_name", fileName)
 	address, err := c.getFinalEndpointUrl(endpointUrl, v)
-	res, err := getFileAsString(address);
+	res, err := getFileAsString(address)
 	if err != nil {
 		return "", nil
 	}
@@ -67,14 +67,14 @@ func getFileAsString(address string) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	
+
 	return string(res), nil
 }
 
 func (c *Client) getAuthHashAndTime() (string, string) {
 	hasher := md5.New()
 	time := strconv.Itoa(int(time.Now().Unix()))
-    hasher.Write([]byte(time + c.Secret))
+	hasher.Write([]byte(time + c.Secret))
 
 	return hex.EncodeToString(hasher.Sum(nil)), time
 }
@@ -89,8 +89,8 @@ func (c *Client) getUrlForEndpoint(endpointName string) (string, error) {
 	if err != nil {
 		return "", errors.New("Can not parse url address!")
 	}
-	
-	return address.String(), nil	
+
+	return address.String(), nil
 }
 
 func (c *Client) getFinalEndpointUrl(endpointUrl string, additionalArgs url.Values) (string, error) {
@@ -98,11 +98,11 @@ func (c *Client) getFinalEndpointUrl(endpointUrl string, additionalArgs url.Valu
 	if err != nil {
 		return "", err
 	}
-	hash, timestamp := c.getAuthHashAndTime();
-	
+	hash, timestamp := c.getAuthHashAndTime()
+
 	additionalArgs.Set("api_key", c.ApiKey)
 	additionalArgs.Set("timestamp", timestamp)
 	additionalArgs.Set("dev_hash", hash)
-	
+
 	return address.String() + "?" + additionalArgs.Encode(), nil
 }
