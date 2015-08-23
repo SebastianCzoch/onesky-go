@@ -12,12 +12,16 @@ import (
 	"time"
 )
 
-const API_ADDRESS = "https://platform.api.onesky.io"
-const API_VERSION = "1"
+// APIAddress is https address to OneSky API
+const APIAddress = "https://platform.api.onesky.io"
 
+// API Version is OneSky API version which will be used
+const APIVersion = "1"
+
+// Client is basics struct for this package
 type Client struct {
 	Secret    string
-	ApiKey    string
+	APIKey    string
 	ProjectID int
 }
 
@@ -34,13 +38,14 @@ var apiEndpoints = map[string]apiEndpoint{
 	"getFile": apiEndpoint{"projects/%d/translations", "GET"},
 }
 
+// DownloadFile is method on Client struct which download form OneSky service choosen file as string
 func (c *Client) DownloadFile(fileName, locale string) (string, error) {
-	_, err := c.getUrlForEndpoint("getFile")
+	_, err := c.getURLForEndpoint("getFile")
 	if err != nil {
 		return "", err
 	}
 
-	endpointUrl, err := c.getUrlForEndpoint("getFile")
+	endpointURL, err := c.getURLForEndpoint("getFile")
 	if err != nil {
 		return "", err
 	}
@@ -48,7 +53,7 @@ func (c *Client) DownloadFile(fileName, locale string) (string, error) {
 	v := url.Values{}
 	v.Set("locale", locale)
 	v.Set("source_file_name", fileName)
-	address, err := c.getFinalEndpointUrl(endpointUrl, v)
+	address, err := c.getFinalEndpointURL(endpointURL, v)
 	res, err := getFileAsString(address)
 	if err != nil {
 		return "", nil
@@ -79,13 +84,13 @@ func (c *Client) getAuthHashAndTime() (string, string) {
 	return hex.EncodeToString(hasher.Sum(nil)), time
 }
 
-func (c *Client) getUrlForEndpoint(endpointName string) (string, error) {
+func (c *Client) getURLForEndpoint(endpointName string) (string, error) {
 	if _, ok := apiEndpoints[endpointName]; !ok {
 		return "", errors.New("Endpoint not found!")
 	}
 
 	urlWithProjectID := fmt.Sprintf(apiEndpoints[endpointName].path, c.ProjectID)
-	address, err := url.Parse(API_ADDRESS + "/" + API_VERSION + "/" + urlWithProjectID)
+	address, err := url.Parse(APIAddress + "/" + APIVersion + "/" + urlWithProjectID)
 	if err != nil {
 		return "", errors.New("Can not parse url address!")
 	}
@@ -93,14 +98,14 @@ func (c *Client) getUrlForEndpoint(endpointName string) (string, error) {
 	return address.String(), nil
 }
 
-func (c *Client) getFinalEndpointUrl(endpointUrl string, additionalArgs url.Values) (string, error) {
-	address, err := url.Parse(endpointUrl)
+func (c *Client) getFinalEndpointURL(endpointURL string, additionalArgs url.Values) (string, error) {
+	address, err := url.Parse(endpointURL)
 	if err != nil {
 		return "", err
 	}
 	hash, timestamp := c.getAuthHashAndTime()
 
-	additionalArgs.Set("api_key", c.ApiKey)
+	additionalArgs.Set("api_key", c.APIKey)
 	additionalArgs.Set("timestamp", timestamp)
 	additionalArgs.Set("dev_hash", hash)
 
