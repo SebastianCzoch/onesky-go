@@ -7,7 +7,7 @@ import (
 	"testing"
 )
 
-// TestGetURLForEndpoint is testing GetURLForEndpoint method
+// TestGetURLForEndpoint is testing getURLForEndpoint method
 func TestGetURLForEndpoint(t *testing.T) {
 	client := Client{}
 	client.Secret = "test_secret"
@@ -25,18 +25,33 @@ func TestGetURLForEndpoint(t *testing.T) {
 	}
 }
 
-// TestGetFinalEndpointURL is testing GetFinalEndpointURL method
+// TestGetFinalEndpointURL is testing getFinalEndpointURL method
 func TestGetFinalEndpointURL(t *testing.T) {
 	client := Client{}
 	client.Secret = "test_secret"
 	client.APIKey = "test_apikey"
+	client.ProjectID = 1
 
 	v := url.Values{}
 	v.Set("test_key", "test_val")
 
-	address, err := client.getFinalEndpointURL("http://example.com/1/", v)
-	found, _ := regexp.MatchString("http://example\\.com/1/\\?api_key=test_apikey&dev_hash=[a-z0-9]+&test_key=test_val&timestamp=[0-9]+", address)
+	address, err := client.getFinalEndpointURL("getFile", v)
+	found, _ := regexp.MatchString("https://platform\\.api\\.onesky\\.io/1/projects/1/translations\\?api_key=test_apikey&dev_hash=[a-z0-9]+&test_key=test_val&timestamp=[0-9]+", address)
 	if !found {
 		t.Errorf("getFinalEndpointURL() = %+v, %+v, want %+v,nil", address, err, "regexp(http://example\\.com/1/\\?api_key=test_apikey&dev_hash=[a-z0-9]+&test_key=test_val&timestamp=[0-9]+)")
+	}
+}
+
+// TestGetURL is testing getURL method
+func TestGetURL(t *testing.T) {
+	client := Client{}
+	client.Secret = "test_secret"
+	client.APIKey = "test_apikey"
+	client.ProjectID = 1
+
+	want := "https://platform.api.onesky.io/1/projects/1/translations"
+	address, err := client.getURL("getFile")
+	if address != want {
+		t.Errorf("getURL(%+v) = %+v, %+v, want %+v,nil", "getURL", address, err, want)
 	}
 }

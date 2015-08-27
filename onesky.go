@@ -6,11 +6,15 @@ import (
 	"encoding/hex"
 	"errors"
 	"fmt"
+	"os"
+	"io"
 	"io/ioutil"
 	"net/http"
 	"net/url"
 	"strconv"
 	"time"
+	"bytes"
+	"mime/multipart"
 )
 
 // APIAddress is https address to OneSky API
@@ -37,29 +41,64 @@ type api struct {
 
 var apiEndpoints = map[string]apiEndpoint{
 	"getFile": apiEndpoint{"projects/%d/translations", "GET"},
+	"postFile": apiEndpoint{"projects/%d/files", "POST"},
 }
 
 // DownloadFile is method on Client struct which download form OneSky service choosen file as string
 func (c *Client) DownloadFile(fileName, locale string) (string, error) {
-	_, err := c.getURLForEndpoint("getFile")
-	if err != nil {
-		return "", err
-	}
-
-	endpointURL, err := c.getURLForEndpoint("getFile")
-	if err != nil {
-		return "", err
-	}
-
 	v := url.Values{}
 	v.Set("locale", locale)
 	v.Set("source_file_name", fileName)
-	address, err := c.getFinalEndpointURL(endpointURL, v)
+	address, err := c.getFinalEndpointURL("getFile", v)
 	res, err := getFileAsString(address)
 	if err != nil {
 		return "", nil
 	}
+
 	return res, nil
+}
+
+// UploadFile is method on Client struct which upload file to OneSky service
+func (c *Client) UploadFile(file, fileFormat, locale string) error {
+	v := url.Values{}
+	v.Set("locale", locale)
+	v.Set("file_format", fileFormat)
+	address, err := c.getFinalEndpointURL("postFile", v)
+	
+    var b bytes.Buffer
+    w := multipart.NewWriter(&b)
+    f, err := os.Open(file)
+    if err != nil {
+        return err
+    }
+
+    fw, err := w.CreateFormFile("file", file)
+    if err != nil {
+        return err
+    }
+
+    if _, err = io.Copy(fw, f); err != nil {
+        return err
+    }
+
+    w.Close()
+    req, err := http.NewRequest("POST", address, &b)
+    if err != nil {
+        return err
+    }
+
+    req.Header.Set("Content-Type", w.FormDataContentType())
+    client := &http.Client{}
+    res, err := client.Do(req)
+    if err != nil {
+        return err
+    }
+
+    if res.StatusCode <= 200 || res.StatusCode > 299 {
+        return fmt.Errorf("bad status: %s", res.Status)
+    }
+
+    return nil
 }
 
 func getFileAsString(address string) (string, error) {
@@ -85,6 +124,20 @@ func (c *Client) getAuthHashAndTime() (string, string) {
 	return hex.EncodeToString(hasher.Sum(nil)), time
 }
 
+func (c *Client) getURL(endpointName string) (string, error) {
+	_, err := c.getURLForEndpoint(endpointName)
+	if err != nil {
+		return "", err
+	}
+
+	endpointURL, err := c.getURLForEndpoint(endpointName)
+	if err != nil {
+		return  "", err
+	}
+
+	return endpointURL, nil
+}
+
 func (c *Client) getURLForEndpoint(endpointName string) (string, error) {
 	if _, ok := apiEndpoints[endpointName]; !ok {
 		return "", errors.New("endpoint not found")
@@ -99,7 +152,12 @@ func (c *Client) getURLForEndpoint(endpointName string) (string, error) {
 	return address.String(), nil
 }
 
-func (c *Client) getFinalEndpointURL(endpointURL string, additionalArgs url.Values) (string, error) {
+func (c *Client) getFinalEndpointURL(endpointName string, additionalArgs url.Values) (string, error) {
+	endpointURL, err := c.getURL(endpointName)
+	if err != nil {
+		return "", err
+	}
+
 	address, err := url.Parse(endpointURL)
 	if err != nil {
 		return "", err
