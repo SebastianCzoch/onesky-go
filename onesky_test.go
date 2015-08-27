@@ -1,4 +1,4 @@
-// Tests for onesky package
+// Package onesky tests
 package onesky
 
 import (

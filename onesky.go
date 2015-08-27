@@ -1,4 +1,4 @@
-// Go utils for working with OneSky translation service
+// Package onesky is go utils for working with OneSky translation service
 package onesky
 
 import (
