@@ -1,3 +1,4 @@
+// Go utils for working with OneSky translation service
 package onesky
 
 import (
@@ -86,13 +87,13 @@ func (c *Client) getAuthHashAndTime() (string, string) {
 
 func (c *Client) getURLForEndpoint(endpointName string) (string, error) {
 	if _, ok := apiEndpoints[endpointName]; !ok {
-		return "", errors.New("Endpoint not found!")
+		return "", errors.New("endpoint not found")
 	}
 
 	urlWithProjectID := fmt.Sprintf(apiEndpoints[endpointName].path, c.ProjectID)
 	address, err := url.Parse(APIAddress + "/" + APIVersion + "/" + urlWithProjectID)
 	if err != nil {
-		return "", errors.New("Can not parse url address!")
+		return "", errors.New("can not parse url address")
 	}
 
 	return address.String(), nil

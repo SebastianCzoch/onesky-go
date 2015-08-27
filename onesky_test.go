@@ -1,3 +1,4 @@
+// Tests for onesky package
 package onesky
 
 import (
@@ -6,6 +7,7 @@ import (
 	"testing"
 )
 
+// TestGetURLForEndpoint is testing GetURLForEndpoint method
 func TestGetURLForEndpoint(t *testing.T) {
 	client := Client{}
 	client.Secret = "test_secret"
@@ -23,6 +25,7 @@ func TestGetURLForEndpoint(t *testing.T) {
 	}
 }
 
+// TestGetFinalEndpointURL is testing GetFinalEndpointURL method
 func TestGetFinalEndpointURL(t *testing.T) {
 	client := Client{}
 	client.Secret = "test_secret"
