@@ -5,7 +5,7 @@
 Go utils for working with [OneSky](http://www.oneskyapp.com/) translation service.
 
 ## Examples
-### Example 1 Download file
+### Example 1 - Download file
 
 ```
 package main
@@ -21,7 +21,7 @@ func main() {
 }
 ```
 
-### Example 2 Upload file
+### Example 2 - Upload file
 
 ```
 package main
@@ -40,7 +40,7 @@ func main() {
 }
 ```
 
-### Example 3 Delete file
+### Example 3 - Delete file
 
 ```
 package main
@@ -74,7 +74,7 @@ Returns file content via string.
 
 ### (c *Client) UploadFile(file, fileFormat, locale string) error
 Upload translation file to OneSky.
-* file should be a full path to file
+* `file` should be a full path to file
 
 ### (c *Client) DeleteFile(fileName string) error
 Permanently remove file from OneSky service (with translations)!
