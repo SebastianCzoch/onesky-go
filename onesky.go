@@ -6,7 +6,6 @@ package onesky
 import (
 	"crypto/md5"
 	"encoding/hex"
-	"errors"
 	"fmt"
 	"os"
 	"io"
@@ -35,10 +34,6 @@ type Client struct {
 type apiEndpoint struct {
 	path   string
 	method string
-}
-
-type api struct {
-	getFile apiEndpoint
 }
 
 var apiEndpoints = map[string]apiEndpoint{
@@ -181,57 +176,6 @@ func (c *Client) getAuthHashAndTime() (string, string) {
 
 	return hex.EncodeToString(hasher.Sum(nil)), time
 }
-
-func (c *Client) getURL(endpointName string) (string, error) {
-	_, err := c.getURLForEndpoint(endpointName)
-	if err != nil {
-		return "", err
-	}
-
-	endpointURL, err := c.getURLForEndpoint(endpointName)
-	if err != nil {
-		return  "", err
-	}
-
-	return endpointURL, nil
-}
-
-func (c *Client) getURLForEndpoint(endpointName string) (string, error) {
-	if _, ok := apiEndpoints[endpointName]; !ok {
-		return "", errors.New("endpoint not found")
-	}
-
-	urlWithProjectID := fmt.Sprintf(apiEndpoints[endpointName].path, c.ProjectID)
-	address, err := url.Parse(APIAddress + "/" + APIVersion + "/" + urlWithProjectID)
-	if err != nil {
-		return "", errors.New("can not parse url address")
-	}
-
-	return address.String(), nil
-}
-
-func (c *Client) getFinalEndpointURL(endpointName string, additionalArgs url.Values) (string, error) {
-	endpointURL, err := c.getURL(endpointName)
-	if err != nil {
-		return "", err
-	}
-
-	address, err := url.Parse(endpointURL)
-	if err != nil {
-		return "", err
-	}
-	hash, timestamp := c.getAuthHashAndTime()
-
-	additionalArgs.Set("api_key", c.APIKey)
-	additionalArgs.Set("timestamp", timestamp)
-	additionalArgs.Set("dev_hash", hash)
-
-	return address.String() + "?" + additionalArgs.Encode(), nil
-}
-
-
-
-
 
 func (e *apiEndpoint) full(c *Client, additionalArgs url.Values) (string, error) {
 	urlWithProjectID := fmt.Sprintf(e.path, c.ProjectID)
