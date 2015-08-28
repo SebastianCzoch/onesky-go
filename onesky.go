@@ -49,16 +49,30 @@ var apiEndpoints = map[string]apiEndpoint{
 
 // DownloadFile is method on Client struct which download form OneSky service choosen file as string
 func (c *Client) DownloadFile(fileName, locale string) (string, error) {
-	v := url.Values{}
-	v.Set("locale", locale)
-	v.Set("source_file_name", fileName)
-	address, err := c.getFinalEndpointURL("getFile", v)
-	response, err := getFileAsString(address)
+	endpoint, err := getEndpoint("getFile")
 	if err != nil {
 		return "", err
 	}
 
-	return response, nil
+	v := url.Values{}
+	v.Set("locale", locale)
+	v.Set("source_file_name", fileName)
+	urlStr, err := endpoint.full(c,v)
+	if err != nil {
+		return "", err
+	}
+
+	res, err := makeRequest(endpoint.method, urlStr, nil)
+	if err != nil {
+		return "", err
+	}
+
+	body, err := getResponseBodyAsString(res)
+	if err != nil {
+		return "", err
+	}
+
+	return body, nil
 }
 
 // UploadFile is method on Client struct which upload file to OneSky service
@@ -132,7 +146,7 @@ func (c *Client) DeleteFile(fileName string) error {
 }
 
 func makeRequest(method, urlStr string, body io.Reader) (*http.Response, error) {
-	req, err := http.NewRequest("DELETE", urlStr, nil)
+	req, err := http.NewRequest(method, urlStr, nil)
 	if err != nil {
 		return nil, err
 	}
@@ -145,13 +159,7 @@ func makeRequest(method, urlStr string, body io.Reader) (*http.Response, error) 
 	return resp, nil
 }
 
-func getFileAsString(address string) (string, error) {
-	response, err := http.Get(address)
-	if err != nil {
-		return "", err
-	}
-	defer response.Body.Close()
-
+func getResponseBodyAsString(response *http.Response) (string, error) {
 	res, err := ioutil.ReadAll(response.Body)
 	if err != nil {
 		return "", err
@@ -214,6 +222,10 @@ func (c *Client) getFinalEndpointURL(endpointName string, additionalArgs url.Val
 
 	return address.String() + "?" + additionalArgs.Encode(), nil
 }
+
+
+
+
 
 func (e *apiEndpoint) full(c *Client, additionalArgs url.Values) (string, error) {
 	urlWithProjectID := fmt.Sprintf(e.path, c.ProjectID)
