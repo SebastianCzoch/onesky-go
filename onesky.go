@@ -6,7 +6,6 @@ package onesky
 import (
 	"crypto/md5"
 	"encoding/hex"
-	"errors"
 	"fmt"
 	"os"
 	"io"
@@ -37,10 +36,6 @@ type apiEndpoint struct {
 	method string
 }
 
-type api struct {
-	getFile apiEndpoint
-}
-
 var apiEndpoints = map[string]apiEndpoint{
 	"getFile": apiEndpoint{"projects/%d/translations", "GET"},
 	"postFile": apiEndpoint{"projects/%d/files", "POST"},
@@ -49,25 +44,47 @@ var apiEndpoints = map[string]apiEndpoint{
 
 // DownloadFile is method on Client struct which download form OneSky service choosen file as string
 func (c *Client) DownloadFile(fileName, locale string) (string, error) {
-	v := url.Values{}
-	v.Set("locale", locale)
-	v.Set("source_file_name", fileName)
-	address, err := c.getFinalEndpointURL("getFile", v)
-	response, err := getFileAsString(address)
+	endpoint, err := getEndpoint("getFile")
 	if err != nil {
 		return "", err
 	}
 
-	return response, nil
+	v := url.Values{}
+	v.Set("locale", locale)
+	v.Set("source_file_name", fileName)
+	urlStr, err := endpoint.full(c,v)
+	if err != nil {
+		return "", err
+	}
+
+	res, err := makeRequest(endpoint.method, urlStr, nil, "")
+	if err != nil {
+		return "", err
+	}
+
+	body, err := getResponseBodyAsString(res)
+	if err != nil {
+		return "", err
+	}
+
+	return body, nil
 }
 
 // UploadFile is method on Client struct which upload file to OneSky service
 func (c *Client) UploadFile(file, fileFormat, locale string) error {
+	endpoint, err := getEndpoint("postFile")
+	if err != nil {
+		return err
+	}
+
 	v := url.Values{}
 	v.Set("locale", locale)
 	v.Set("file_format", fileFormat)
-	address, err := c.getFinalEndpointURL("postFile", v)
-	
+	urlStr, err := endpoint.full(c, v)
+	if err != nil {
+		return err
+	}
+
     var b bytes.Buffer
     w := multipart.NewWriter(&b)
     f, err := os.Open(file)
@@ -84,21 +101,15 @@ func (c *Client) UploadFile(file, fileFormat, locale string) error {
     if _, err = io.Copy(fw, f); err != nil {
         return err
     }
+
     w.Close()
 
-    req, err := http.NewRequest("POST", address, &b)
+    res, err := makeRequest(endpoint.method, urlStr, &b, w.FormDataContentType())
     if err != nil {
         return err
     }
 
-    req.Header.Set("Content-Type", w.FormDataContentType())
-    client := &http.Client{}
-    res, err := client.Do(req)
-    if err != nil {
-        return err
-    }
-
-    if res.StatusCode <= 200 || res.StatusCode > 299 {
+    if res.StatusCode != http.StatusCreated {
         return fmt.Errorf("bad status: %s", res.Status)
     }
 
@@ -107,10 +118,19 @@ func (c *Client) UploadFile(file, fileFormat, locale string) error {
 
 // DeleteFile is method on Client struct which remove file from OneSky service
 func (c *Client) DeleteFile(fileName string) error {
+	endpoint, err := getEndpoint("deleteFile")
+	if err != nil {
+		return err
+	}
+
 	v := url.Values{}
 	v.Set("file_name", fileName)
-	address, err := c.getFinalEndpointURL("deleteFile", v)
-	res, err := makeRequest("DELETE", address, nil)
+	urlStr, err := endpoint.full(c,v)
+	if err != nil {
+		return err
+	}
+
+	res, err := makeRequest(endpoint.method, urlStr, nil, "")
 	if err != nil {
 		return err
 	}
@@ -122,10 +142,14 @@ func (c *Client) DeleteFile(fileName string) error {
 	return nil
 }
 
-func makeRequest(method, urlStr string, body io.Reader) (*http.Response, error) {
-	req, err := http.NewRequest("DELETE", urlStr, nil)
+func makeRequest(method, urlStr string, body io.Reader, contentType string) (*http.Response, error) {
+	req, err := http.NewRequest(method, urlStr, body)
 	if err != nil {
 		return nil, err
+	}
+
+	if contentType != "" {
+		req.Header.Set("Content-Type", contentType)
 	}
 
 	resp, err := http.DefaultClient.Do(req)
@@ -136,13 +160,7 @@ func makeRequest(method, urlStr string, body io.Reader) (*http.Response, error) 
 	return resp, nil
 }
 
-func getFileAsString(address string) (string, error) {
-	response, err := http.Get(address)
-	if err != nil {
-		return "", err
-	}
-	defer response.Body.Close()
-
+func getResponseBodyAsString(response *http.Response) (string, error) {
 	res, err := ioutil.ReadAll(response.Body)
 	if err != nil {
 		return "", err
@@ -159,49 +177,26 @@ func (c *Client) getAuthHashAndTime() (string, string) {
 	return hex.EncodeToString(hasher.Sum(nil)), time
 }
 
-func (c *Client) getURL(endpointName string) (string, error) {
-	_, err := c.getURLForEndpoint(endpointName)
-	if err != nil {
-		return "", err
-	}
-
-	endpointURL, err := c.getURLForEndpoint(endpointName)
-	if err != nil {
-		return  "", err
-	}
-
-	return endpointURL, nil
-}
-
-func (c *Client) getURLForEndpoint(endpointName string) (string, error) {
-	if _, ok := apiEndpoints[endpointName]; !ok {
-		return "", errors.New("endpoint not found")
-	}
-
-	urlWithProjectID := fmt.Sprintf(apiEndpoints[endpointName].path, c.ProjectID)
+func (e *apiEndpoint) full(c *Client, additionalArgs url.Values) (string, error) {
+	urlWithProjectID := fmt.Sprintf(e.path, c.ProjectID)
 	address, err := url.Parse(APIAddress + "/" + APIVersion + "/" + urlWithProjectID)
 	if err != nil {
-		return "", errors.New("can not parse url address")
-	}
-
-	return address.String(), nil
-}
-
-func (c *Client) getFinalEndpointURL(endpointName string, additionalArgs url.Values) (string, error) {
-	endpointURL, err := c.getURL(endpointName)
-	if err != nil {
 		return "", err
 	}
 
-	address, err := url.Parse(endpointURL)
-	if err != nil {
-		return "", err
-	}
 	hash, timestamp := c.getAuthHashAndTime()
-
 	additionalArgs.Set("api_key", c.APIKey)
 	additionalArgs.Set("timestamp", timestamp)
 	additionalArgs.Set("dev_hash", hash)
 
 	return address.String() + "?" + additionalArgs.Encode(), nil
+}
+
+func getEndpoint(name string) (apiEndpoint, error) {
+	endpoint, ok := apiEndpoints[name];
+	if !ok {
+		return apiEndpoint{}, fmt.Errorf("endpoint %s not found", name)
+	}
+
+	return endpoint, nil
 }
