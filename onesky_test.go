@@ -1,3 +1,5 @@
+// Copyright (c) 2015 Sebastian Czoch <sebastian@czoch.eu>. All rights reserved.
+// Use of this source code is governed by a GNU v2 license found in the LICENSE file.
 // Package onesky tests
 package onesky
 

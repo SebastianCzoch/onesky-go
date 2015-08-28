@@ -1,3 +1,5 @@
+// Copyright (c) 2015 Sebastian Czoch <sebastian@czoch.eu>. All rights reserved.
+// Use of this source code is governed by a GNU v2 license found in the LICENSE file.
 // Package onesky is go utils for working with OneSky translation service
 package onesky
 
@@ -50,12 +52,12 @@ func (c *Client) DownloadFile(fileName, locale string) (string, error) {
 	v.Set("locale", locale)
 	v.Set("source_file_name", fileName)
 	address, err := c.getFinalEndpointURL("getFile", v)
-	res, err := getFileAsString(address)
+	response, err := getFileAsString(address)
 	if err != nil {
-		return "", nil
+		return "", err
 	}
 
-	return res, nil
+	return response, nil
 }
 
 // UploadFile is method on Client struct which upload file to OneSky service
@@ -71,6 +73,7 @@ func (c *Client) UploadFile(file, fileFormat, locale string) error {
     if err != nil {
         return err
     }
+    defer w.Close()
 
     fw, err := w.CreateFormFile("file", file)
     if err != nil {
@@ -80,8 +83,8 @@ func (c *Client) UploadFile(file, fileFormat, locale string) error {
     if _, err = io.Copy(fw, f); err != nil {
         return err
     }
-
     w.Close()
+
     req, err := http.NewRequest("POST", address, &b)
     if err != nil {
         return err
@@ -106,9 +109,9 @@ func getFileAsString(address string) (string, error) {
 	if err != nil {
 		return "", err
 	}
+	defer response.Body.Close()
 
 	res, err := ioutil.ReadAll(response.Body)
-	response.Body.Close()
 	if err != nil {
 		return "", err
 	}
