@@ -105,6 +105,7 @@ func (c *Client) UploadFile(file, fileFormat, locale string) error {
     return nil
 }
 
+// DeleteFile is method on Client struct which remove file from OneSky service
 func (c *Client) DeleteFile(fileName string) error {
 	v := url.Values{}
 	v.Set("file_name", fileName)
