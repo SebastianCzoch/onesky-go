@@ -44,6 +44,7 @@ type api struct {
 var apiEndpoints = map[string]apiEndpoint{
 	"getFile": apiEndpoint{"projects/%d/translations", "GET"},
 	"postFile": apiEndpoint{"projects/%d/files", "POST"},
+	"deleteFile": apiEndpoint{"projects/%d/files", "DELETE"},
 }
 
 // DownloadFile is method on Client struct which download form OneSky service choosen file as string
@@ -102,6 +103,36 @@ func (c *Client) UploadFile(file, fileFormat, locale string) error {
     }
 
     return nil
+}
+
+func (c *Client) DeleteFile(fileName string) error {
+	v := url.Values{}
+	v.Set("file_name", fileName)
+	address, err := c.getFinalEndpointURL("deleteFile", v)
+	res, err := makeRequest("DELETE", address, nil)
+	if err != nil {
+		return err
+	}
+
+	if res.StatusCode != http.StatusOK {
+		return fmt.Errorf("bad status: %s", res.Status)
+	}
+
+	return nil
+}
+
+func makeRequest(method, urlStr string, body io.Reader) (*http.Response, error) {
+	req, err := http.NewRequest("DELETE", urlStr, nil)
+	if err != nil {
+		return nil, err
+	}
+
+	resp, err := http.DefaultClient.Do(req)
+	if err != nil {
+		return nil, err
+	}
+
+	return resp, nil
 }
 
 func getFileAsString(address string) (string, error) {
