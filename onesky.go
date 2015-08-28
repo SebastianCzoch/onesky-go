@@ -62,7 +62,7 @@ func (c *Client) DownloadFile(fileName, locale string) (string, error) {
 		return "", err
 	}
 
-	res, err := makeRequest(endpoint.method, urlStr, nil)
+	res, err := makeRequest(endpoint.method, urlStr, nil, "")
 	if err != nil {
 		return "", err
 	}
@@ -77,11 +77,19 @@ func (c *Client) DownloadFile(fileName, locale string) (string, error) {
 
 // UploadFile is method on Client struct which upload file to OneSky service
 func (c *Client) UploadFile(file, fileFormat, locale string) error {
+	endpoint, err := getEndpoint("postFile")
+	if err != nil {
+		return err
+	}
+
 	v := url.Values{}
 	v.Set("locale", locale)
 	v.Set("file_format", fileFormat)
-	address, err := c.getFinalEndpointURL("postFile", v)
-	
+	urlStr, err := endpoint.full(c, v)
+	if err != nil {
+		return err
+	}
+
     var b bytes.Buffer
     w := multipart.NewWriter(&b)
     f, err := os.Open(file)
@@ -98,21 +106,15 @@ func (c *Client) UploadFile(file, fileFormat, locale string) error {
     if _, err = io.Copy(fw, f); err != nil {
         return err
     }
+
     w.Close()
 
-    req, err := http.NewRequest("POST", address, &b)
+    res, err := makeRequest(endpoint.method, urlStr, &b, w.FormDataContentType())
     if err != nil {
         return err
     }
 
-    req.Header.Set("Content-Type", w.FormDataContentType())
-    client := &http.Client{}
-    res, err := client.Do(req)
-    if err != nil {
-        return err
-    }
-
-    if res.StatusCode <= 200 || res.StatusCode > 299 {
+    if res.StatusCode != http.StatusCreated {
         return fmt.Errorf("bad status: %s", res.Status)
     }
 
@@ -133,7 +135,7 @@ func (c *Client) DeleteFile(fileName string) error {
 		return err
 	}
 
-	res, err := makeRequest(endpoint.method, urlStr, nil)
+	res, err := makeRequest(endpoint.method, urlStr, nil, "")
 	if err != nil {
 		return err
 	}
@@ -145,10 +147,14 @@ func (c *Client) DeleteFile(fileName string) error {
 	return nil
 }
 
-func makeRequest(method, urlStr string, body io.Reader) (*http.Response, error) {
-	req, err := http.NewRequest(method, urlStr, nil)
+func makeRequest(method, urlStr string, body io.Reader, contentType string) (*http.Response, error) {
+	req, err := http.NewRequest(method, urlStr, body)
 	if err != nil {
 		return nil, err
+	}
+
+	if contentType != "" {
+		req.Header.Set("Content-Type", contentType)
 	}
 
 	resp, err := http.DefaultClient.Do(req)
