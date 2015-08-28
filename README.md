@@ -40,6 +40,25 @@ func main() {
 }
 ```
 
+### Example 3 Delete file
+
+```
+package main
+
+import (
+	"fmt"
+	"github.com/SebastianCzoch/onesky-go"
+)
+
+func main() {
+	onesky := onesky.Client{APIKey: "abcdef", Secret: "abcdef", ProjectID: 1}
+	err := onesky.DeleteFile("messages.yml")
+	if err != nil {
+		fmt.Println("Can not delete file")
+	}
+}
+```
+
 ## Install
 
 ```
@@ -56,6 +75,9 @@ Returns file content via string.
 ### (c *Client) UploadFile(file, fileFormat, locale string) error
 Upload translation file to OneSky.
 * file should be a full path to file
+
+### (c *Client) DeleteFile(fileName string) error
+Permanently remove file from OneSky service (with translations)!
 
 ## Tests
 
