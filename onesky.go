@@ -107,10 +107,19 @@ func (c *Client) UploadFile(file, fileFormat, locale string) error {
 
 // DeleteFile is method on Client struct which remove file from OneSky service
 func (c *Client) DeleteFile(fileName string) error {
+	endpoint, err := getEndpoint("deleteFile")
+	if err != nil {
+		return err
+	}
+
 	v := url.Values{}
 	v.Set("file_name", fileName)
-	address, err := c.getFinalEndpointURL("deleteFile", v)
-	res, err := makeRequest("DELETE", address, nil)
+	urlStr, err := endpoint.full(c,v)
+	if err != nil {
+		return err
+	}
+
+	res, err := makeRequest(endpoint.method, urlStr, nil)
 	if err != nil {
 		return err
 	}
@@ -204,4 +213,28 @@ func (c *Client) getFinalEndpointURL(endpointName string, additionalArgs url.Val
 	additionalArgs.Set("dev_hash", hash)
 
 	return address.String() + "?" + additionalArgs.Encode(), nil
+}
+
+func (e *apiEndpoint) full(c *Client, additionalArgs url.Values) (string, error) {
+	urlWithProjectID := fmt.Sprintf(e.path, c.ProjectID)
+	address, err := url.Parse(APIAddress + "/" + APIVersion + "/" + urlWithProjectID)
+	if err != nil {
+		return "", err
+	}
+
+	hash, timestamp := c.getAuthHashAndTime()
+	additionalArgs.Set("api_key", c.APIKey)
+	additionalArgs.Set("timestamp", timestamp)
+	additionalArgs.Set("dev_hash", hash)
+
+	return address.String() + "?" + additionalArgs.Encode(), nil
+}
+
+func getEndpoint(name string) (apiEndpoint, error) {
+	endpoint, ok := apiEndpoints[name];
+	if !ok {
+		return apiEndpoint{}, fmt.Errorf("endpoint %s not found", name)
+	}
+
+	return endpoint, nil
 }
