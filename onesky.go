@@ -16,6 +16,7 @@ import (
 	"time"
 	"bytes"
 	"mime/multipart"
+	"encoding/json"
 )
 
 // APIAddress is https address to OneSky API
@@ -40,6 +41,55 @@ var apiEndpoints = map[string]apiEndpoint{
 	"getFile": apiEndpoint{"projects/%d/translations", "GET"},
 	"postFile": apiEndpoint{"projects/%d/files", "POST"},
 	"deleteFile": apiEndpoint{"projects/%d/files", "DELETE"},
+	"listFiles": apiEndpoint{"projects/%d/files", "GET"},
+}
+
+type listFilesResponse struct {
+	Data []FileData `json:"data"`
+}
+
+type FileData struct {
+	Name string `json:"file_name"`
+	StringCount int `json:"string_count"`
+	LastImport struct {
+		Id int `json:"id"`
+		Status string `json:"status"`
+	} `json:"last_import"`
+	UpoladedAt string `json:"uploaded_at"`
+	UpoladedAtTimestamp int `json:"uploaded_at_timestamp"`
+}
+
+func (c *Client) ListFiles(page, perPage int) ([]FileData, error) {
+	endpoint, err := getEndpoint("listFiles")
+	if err != nil {
+		return nil, err
+	}
+
+	v := url.Values{}
+	v.Set("page", strconv.Itoa(page))
+	v.Set("per_page", strconv.Itoa(perPage))
+	urlStr, err := endpoint.full(c,v)
+	if err != nil {
+		return nil, err
+	}
+
+	res, err := makeRequest(endpoint.method, urlStr, nil, "")
+	if err != nil {
+		return nil, err
+	}
+
+	body, err := getResponseBodyAsString(res)
+	if err != nil {
+		return nil, err
+	}
+
+	aux := listFilesResponse{}
+	err = json.Unmarshal([]byte(body), &aux)
+	if err != nil {
+		return nil, err
+	}
+	
+	return aux.Data, nil
 }
 
 // DownloadFile is method on Client struct which download form OneSky service choosen file as string
