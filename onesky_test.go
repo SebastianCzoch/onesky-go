@@ -10,16 +10,16 @@ import (
 )
 
 var testEndpoints = map[string]apiEndpoint{
-	"getFile": apiEndpoint{"projects/%d/translations", "GET"},
-	"postFile": apiEndpoint{"projects/%d/files", "POST"},
+	"getFile":    apiEndpoint{"projects/%d/translations", "GET"},
+	"postFile":   apiEndpoint{"projects/%d/files", "POST"},
 	"deleteFile": apiEndpoint{"projects/%d/files", "DELETE"},
 }
 
 // TestFull is testing full method on apiEndpoint struct
 func TestFull(t *testing.T) {
 	client := Client{
-		Secret: "test_secret",
-		APIKey: "test_apikey",
+		Secret:    "test_secret",
+		APIKey:    "test_apikey",
 		ProjectID: 1,
 	}
 
@@ -27,7 +27,7 @@ func TestFull(t *testing.T) {
 	v.Set("test_key", "test_val")
 	endpoint := testEndpoints["getFile"]
 	want := "https://platform\\.api\\.onesky\\.io/1/projects/1/translations\\?api_key=test_apikey&dev_hash=[a-z0-9]+&test_key=test_val&timestamp=[0-9]+"
-	address, err := endpoint.full(&client,v)
+	address, err := endpoint.full(&client, v)
 	if err != nil {
 		t.Errorf("full() = %+v, %+v, want %+v,nil", address, err, want)
 	}
