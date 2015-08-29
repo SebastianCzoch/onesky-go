@@ -59,6 +59,24 @@ func main() {
 }
 ```
 
+### Example 4 - Get informations about uploaded files
+```
+package main
+
+import (
+	"fmt"
+	"github.com/SebastianCzoch/onesky-go"
+)
+
+func main() {
+	onesky := onesky.Client{APIKey: "abcdef", Secret: "abcdef", ProjectID: 1}
+	err := onesky.ListFiles(1, 100)
+	if err != nil {
+		fmt.Println("Can not download list of uploaded files")
+	}
+}
+```
+
 ## Install
 
 ```
@@ -78,6 +96,9 @@ Upload translation file to OneSky.
 
 ### (c *Client) DeleteFile(fileName string) error
 Permanently remove file from OneSky service (with translations)!
+
+### (c *Client) ListFiles(page, perPage int) ([]FileData, error)
+Get informations about files uploaded to OneSky
 
 ## Tests
 
