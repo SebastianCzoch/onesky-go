@@ -25,7 +25,7 @@ const APIAddress = "https://platform.api.onesky.io"
 // API Version is OneSky API version which will be used
 const APIVersion = "1"
 
-// Client is basics struct for this package
+// Client is basics struct for this package contains Secret, APIKey and ProjectID which is needed to authorize in OneSky service
 type Client struct {
 	Secret    string
 	APIKey    string
@@ -44,21 +44,23 @@ var apiEndpoints = map[string]apiEndpoint{
 	"listFiles": apiEndpoint{"projects/%d/files", "GET"},
 }
 
-type listFilesResponse struct {
-	Data []FileData `json:"data"`
-}
-
+// FileData is a struct which contains informations about file uploaded to OneSky service
 type FileData struct {
 	Name string `json:"file_name"`
 	StringCount int `json:"string_count"`
 	LastImport struct {
-		Id int `json:"id"`
+		ID int `json:"id"`
 		Status string `json:"status"`
 	} `json:"last_import"`
 	UpoladedAt string `json:"uploaded_at"`
 	UpoladedAtTimestamp int `json:"uploaded_at_timestamp"`
 }
 
+type listFilesResponse struct {
+	Data []FileData `json:"data"`
+}
+
+// ListFiles is method on Client struct which download form OneSky service informations about uploaded files
 func (c *Client) ListFiles(page, perPage int) ([]FileData, error) {
 	endpoint, err := getEndpoint("listFiles")
 	if err != nil {
@@ -77,6 +79,10 @@ func (c *Client) ListFiles(page, perPage int) ([]FileData, error) {
 	if err != nil {
 		return nil, err
 	}
+
+	if res.StatusCode != http.StatusOK {
+        return nil, fmt.Errorf("bad status: %s", res.Status)
+    }
 
 	body, err := getResponseBodyAsString(res)
 	if err != nil {
@@ -111,6 +117,10 @@ func (c *Client) DownloadFile(fileName, locale string) (string, error) {
 	if err != nil {
 		return "", err
 	}
+
+	if res.StatusCode != http.StatusOK {
+        return "", fmt.Errorf("bad status: %s", res.Status)
+    }
 
 	body, err := getResponseBodyAsString(res)
 	if err != nil {
