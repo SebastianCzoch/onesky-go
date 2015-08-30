@@ -27,12 +27,13 @@ engines:
 # For more details see here:
 # http://docs.codeclimate.com/article/289-configuring-your-repository-via-codeclimate-yml#platform
 
- ratings:
+ratings:
    paths:
-   - "**.go"
+   - "*.go"
+   - "**/*.go"
 
 # You can globally exclude files from being analyzed by any engine using the
 # exclude_paths key.
 
 exclude_paths:
-- *_test.go
+- "*_test.go"
