@@ -1,4 +1,4 @@
-# onesky-go [![Build Status](https://travis-ci.org/SebastianCzoch/onesky-go.svg?branch=master)](https://travis-ci.org/SebastianCzoch/onesky-go) [![Code Climate](https://codeclimate.com/github/SebastianCzoch/onesky-go/badges/gpa.svg)](https://codeclimate.com/github/SebastianCzoch/onesky-go) [![GoDoc](https://godoc.org/github.com/SebastianCzoch/onesky-go?status.svg)](https://godoc.org/github.com/SebastianCzoch/onesky-go)
+# onesky-go [![Build Status](https://travis-ci.org/SebastianCzoch/onesky-go.svg?branch=master)](https://travis-ci.org/SebastianCzoch/onesky-go) [![Code Climate](https://codeclimate.com/github/SebastianCzoch/onesky-go/badges/gpa.svg)](https://codeclimate.com/github/SebastianCzoch/onesky-go) [![GoDoc](https://godoc.org/github.com/SebastianCzoch/onesky-go?status.svg)](https://godoc.org/github.com/SebastianCzoch/onesky-go)  [![License](https://img.shields.io/badge/licence-GNU%20v2-green.svg)](./LICENSE)
 
 
 
