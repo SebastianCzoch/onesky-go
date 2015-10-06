@@ -43,12 +43,12 @@ func TestGetEndpoint(t *testing.T) {
 	endpointName := "not_exist_endpoint"
 	endpoint, err := getEndpoint(endpointName)
 	if err == nil {
-		t.Errorf("getEndpoint(%s) = %+v, %s, want %s,%s", endpointName, endpoint, err, nil, "endpoint not_exist_endpoint not found")
+		t.Errorf("getEndpoint(%s) = %+v, %s, want %v,%s", endpointName, endpoint, err, nil, "endpoint not_exist_endpoint not found")
 	}
 
 	endpointName = "getFile"
 	endpoint, err = getEndpoint(endpointName)
 	if err != nil {
-		t.Errorf("getEndpoint(%s) = %+v, %s, want %s,%s", endpointName, endpoint, err, nil, "endpoint not_exist_endpoint not found")
+		t.Errorf("getEndpoint(%s) = %+v, %s, want %v,%s", endpointName, endpoint, err, nil, "endpoint not_exist_endpoint not found")
 	}
 }
