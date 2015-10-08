@@ -53,6 +53,7 @@ type FileData struct {
 	UpoladedAtTimestamp int        `json:"uploaded_at_timestamp"`
 }
 
+// LastImport is a struct which contains informations about last upload
 type LastImport struct {
 	ID     int    `json:"id"`
 	Status string `json:"status"`
