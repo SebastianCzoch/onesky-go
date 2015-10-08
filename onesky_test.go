@@ -130,3 +130,26 @@ func TestListFilesWithSuccess(t *testing.T) {
 			},
 		}, res)
 }
+
+func TestDownloadFileWithFailure(t *testing.T) {
+	httpmock.Activate()
+	defer httpmock.DeactivateAndReset()
+	httpmock.RegisterNoResponder(httpmock.NewStringResponder(500, ""))
+	client := Client{APIKey: "abcdef", Secret: "abcdef", ProjectID: 1}
+
+	_, err := client.DownloadFile("test.yml", "en_US")
+	assert.Equal(t, err, fmt.Errorf("bad status: %d", 500))
+}
+
+func TestDownloadFileWithSuccess(t *testing.T) {
+	httpmock.Activate()
+	defer httpmock.DeactivateAndReset()
+	httpmock.RegisterNoResponder(httpmock.NewStringResponder(200, `test: translatedTest`))
+	client := Client{APIKey: "abcdef", Secret: "abcdef", ProjectID: 1}
+
+	res, err := client.DownloadFile("test.yml", "en_US")
+	fmt.Println(res)
+	assert.Nil(t, err)
+
+	assert.Equal(t, `test: translatedTest`, res)
+}
