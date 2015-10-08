@@ -4,9 +4,13 @@
 package onesky
 
 import (
+	"fmt"
 	"net/url"
 	"regexp"
 	"testing"
+
+	"github.com/jarcoal/httpmock"
+	"github.com/stretchr/testify/assert"
 )
 
 var testEndpoints = map[string]apiEndpoint{
@@ -43,12 +47,109 @@ func TestGetEndpoint(t *testing.T) {
 	endpointName := "not_exist_endpoint"
 	endpoint, err := getEndpoint(endpointName)
 	if err == nil {
-		t.Errorf("getEndpoint(%s) = %+v, %s, want %s,%s", endpointName, endpoint, err, nil, "endpoint not_exist_endpoint not found")
+		t.Errorf("getEndpoint(%s) = %+v, %s, want %v,%s", endpointName, endpoint, err, nil, "endpoint not_exist_endpoint not found")
 	}
 
 	endpointName = "getFile"
 	endpoint, err = getEndpoint(endpointName)
 	if err != nil {
-		t.Errorf("getEndpoint(%s) = %+v, %s, want %s,%s", endpointName, endpoint, err, nil, "endpoint not_exist_endpoint not found")
+		t.Errorf("getEndpoint(%s) = %+v, %s, want %v,%s", endpointName, endpoint, err, nil, "endpoint not_exist_endpoint not found")
 	}
+}
+
+func TestDeleteFileWithSuccess(t *testing.T) {
+	httpmock.Activate()
+	defer httpmock.DeactivateAndReset()
+	httpmock.RegisterNoResponder(httpmock.NewStringResponder(200, ""))
+	client := Client{APIKey: "abcdef", Secret: "abcdef", ProjectID: 1}
+
+	err := client.DeleteFile("test.yml")
+	assert.Nil(t, err)
+}
+
+func TestDeleteFileWithFailure(t *testing.T) {
+	httpmock.Activate()
+	defer httpmock.DeactivateAndReset()
+	httpmock.RegisterNoResponder(httpmock.NewStringResponder(500, ""))
+	client := Client{APIKey: "abcdef", Secret: "abcdef", ProjectID: 1}
+
+	err := client.DeleteFile("test.yml")
+	assert.Equal(t, err, fmt.Errorf("bad status: %d", 500))
+}
+
+func TestListFilesWithFailure(t *testing.T) {
+	httpmock.Activate()
+	defer httpmock.DeactivateAndReset()
+	httpmock.RegisterNoResponder(httpmock.NewStringResponder(500, ""))
+	client := Client{APIKey: "abcdef", Secret: "abcdef", ProjectID: 1}
+
+	_, err := client.ListFiles(1, 1)
+	assert.Equal(t, err, fmt.Errorf("bad status: %d", 500))
+}
+
+func TestListFilesWithSuccess(t *testing.T) {
+	httpmock.Activate()
+	defer httpmock.DeactivateAndReset()
+	httpmock.RegisterNoResponder(httpmock.NewStringResponder(200, `{"meta":{"status":200,"record_count":16},"data":[{"name":"strings.po","string_count":236,"last_import":{"id":123,"status":"in-progress"},"uploaded_at":"2013-10-07T15:27:10+0000","uploaded_at_timestamp":1381159630},{"name":"en.yml","string_count":335,"last_import":{"id":109,"status":"completed"},"uploaded_at":"2013-10-05T12:36:52+0000","uploaded_at_timestamp":1380976612},{"name":"Manuallyinput","string_count":285}]}`))
+	client := Client{APIKey: "abcdef", Secret: "abcdef", ProjectID: 1}
+
+	res, err := client.ListFiles(1, 1)
+	assert.Nil(t, err)
+
+	assert.Equal(t,
+		[]FileData{
+			FileData{
+				Name:        "strings.po",
+				StringCount: 236,
+				LastImport: LastImport{
+					ID:     123,
+					Status: "in-progress",
+				},
+				UpoladedAt:          "2013-10-07T15:27:10+0000",
+				UpoladedAtTimestamp: 1381159630,
+			},
+			FileData{
+				Name:        "en.yml",
+				StringCount: 335,
+				LastImport: LastImport{
+					ID:     109,
+					Status: "completed",
+				},
+				UpoladedAt:          "2013-10-05T12:36:52+0000",
+				UpoladedAtTimestamp: 1380976612,
+			},
+			FileData{
+				Name:        "Manuallyinput",
+				StringCount: 285,
+				LastImport: LastImport{
+					ID:     0,
+					Status: "",
+				},
+				UpoladedAt:          "",
+				UpoladedAtTimestamp: 0,
+			},
+		}, res)
+}
+
+func TestDownloadFileWithFailure(t *testing.T) {
+	httpmock.Activate()
+	defer httpmock.DeactivateAndReset()
+	httpmock.RegisterNoResponder(httpmock.NewStringResponder(500, ""))
+	client := Client{APIKey: "abcdef", Secret: "abcdef", ProjectID: 1}
+
+	_, err := client.DownloadFile("test.yml", "en_US")
+	assert.Equal(t, err, fmt.Errorf("bad status: %d", 500))
+}
+
+func TestDownloadFileWithSuccess(t *testing.T) {
+	httpmock.Activate()
+	defer httpmock.DeactivateAndReset()
+	httpmock.RegisterNoResponder(httpmock.NewStringResponder(200, `test: translatedTest`))
+	client := Client{APIKey: "abcdef", Secret: "abcdef", ProjectID: 1}
+
+	res, err := client.DownloadFile("test.yml", "en_US")
+	fmt.Println(res)
+	assert.Nil(t, err)
+
+	assert.Equal(t, `test: translatedTest`, res)
 }

@@ -46,14 +46,17 @@ var apiEndpoints = map[string]apiEndpoint{
 
 // FileData is a struct which contains informations about file uploaded to OneSky service
 type FileData struct {
-	Name        string `json:"file_name"`
-	StringCount int    `json:"string_count"`
-	LastImport  struct {
-		ID     int    `json:"id"`
-		Status string `json:"status"`
-	} `json:"last_import"`
-	UpoladedAt          string `json:"uploaded_at"`
-	UpoladedAtTimestamp int    `json:"uploaded_at_timestamp"`
+	Name                string     `json:"name"`
+	StringCount         int        `json:"string_count"`
+	LastImport          LastImport `json:"last_import"`
+	UpoladedAt          string     `json:"uploaded_at"`
+	UpoladedAtTimestamp int        `json:"uploaded_at_timestamp"`
+}
+
+// LastImport is a struct which contains informations about last upload
+type LastImport struct {
+	ID     int    `json:"id"`
+	Status string `json:"status"`
 }
 
 type listFilesResponse struct {
