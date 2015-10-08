@@ -70,10 +70,11 @@ import (
 
 func main() {
 	onesky := onesky.Client{APIKey: "abcdef", Secret: "abcdef", ProjectID: 1}
-	err := onesky.ListFiles(1, 100)
+	list, err := onesky.ListFiles(1, 100)
 	if err != nil {
 		fmt.Println("Can not download list of uploaded files")
 	}
+	fmt.Println(list)
 }
 ```
 
@@ -82,6 +83,12 @@ func main() {
 ```
 $ go get github.com/SebastianCzoch/onesky-go
 ````
+
+or via [Godep](https://github.com/tools/godep)
+```
+$ godep get github.com/SebastianCzoch/onesky-go
+```
+
 
 ## API
 
@@ -103,7 +110,7 @@ Get informations about files uploaded to OneSky
 ## Tests
 
 ```
-$ go test
+$ go test ./...
 ````
 
 ## License
