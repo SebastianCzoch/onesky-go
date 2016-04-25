@@ -47,6 +47,7 @@ var apiEndpoints = map[string]apiEndpoint{
 // FileData is a struct which contains informations about file uploaded to OneSky service
 type FileData struct {
 	Name                string     `json:"name"`
+	FileName            string     `json:"file_name"`
 	StringCount         int        `json:"string_count"`
 	LastImport          LastImport `json:"last_import"`
 	UpoladedAt          string     `json:"uploaded_at"`
