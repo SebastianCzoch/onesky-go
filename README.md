@@ -139,7 +139,7 @@ Downloads translation file from OneSky.
 
 Returns file content via string.
 
-### (c *Client) UploadFile(file, fileFormat, locale string) error
+### (c *Client) UploadFile(file, fileFormat, locale string) (UploadData, error)
 Upload translation file to OneSky.
 * `file` should be a full path to file
 
@@ -148,6 +148,12 @@ Permanently remove file from OneSky service (with translations)!
 
 ### (c *Client) ListFiles(page, perPage int) ([]FileData, error)
 Get informations about files uploaded to OneSky
+
+### (c *Client) ImportTasks(params) ([]TaskData, error)
+List import tasks. (Default params: `{"page": 1, "per_page": 50, "status": "all"}`)
+
+### (c *Client) ImportTask(importID) (TaskData, error)
+Show an import task.
 
 ## Tests
 

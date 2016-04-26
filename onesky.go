@@ -136,13 +136,13 @@ func ConvertInt(in interface{}) (int64, error) {
 }
 
 // show an import task. Parameters: import_id
-func (c *Client) ImportTask(id int64) (TaskData, error) {
+func (c *Client) ImportTask(importID int64) (TaskData, error) {
 	endpoint, err := getEndpoint("importTask")
 	if err != nil {
 		return TaskData{}, err
 	}
 	values := url.Values{}
-	urlStr, err := endpoint.full(c, values, id)
+	urlStr, err := endpoint.full(c, values, importID)
 	if err != nil {
 		return TaskData{}, err
 	}
