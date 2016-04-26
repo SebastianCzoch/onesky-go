@@ -34,7 +34,7 @@ import (
 
 func main() {
 	onesky := onesky.Client{APIKey: "abcdef", Secret: "abcdef", ProjectID: 1}
-	err := onesky.UploadFile("messages.yml", "YAML", "en-US")
+	_, err := onesky.UploadFile("messages.yml", "YAML", "en-US")
 	if err != nil {
 		fmt.Println("Can not upload file")
 	}
@@ -76,6 +76,47 @@ func main() {
 		fmt.Println("Can not download list of uploaded files")
 	}
 	fmt.Println(list)
+}
+```
+
+### Example 5 - List import tasks
+```
+package main
+
+import (
+	"fmt"
+	"github.com/SebastianCzoch/onesky-go"
+)
+
+func main() {
+	onesky := onesky.Client{APIKey: "abcdef", Secret: "abcdef", ProjectID: 1}
+	list, err := onesky.ImportTasks(map[string]interface{}{
+		"per_page": 50,
+		"status": "completed", // all, completed, in-progress, failed
+	})
+	if err != nil {
+		fmt.Println("Can not download list of import tasks")
+	}
+	fmt.Println(list)
+}
+```
+
+### Example 6 - Show an import task
+```
+package main
+
+import (
+	"fmt"
+	"github.com/SebastianCzoch/onesky-go"
+)
+
+func main() {
+	onesky := onesky.Client{APIKey: "abcdef", Secret: "abcdef", ProjectID: 1}
+	task, err := onesky.ImportTask(773572) // import id
+	if err != nil {
+		fmt.Println(err)
+	}
+	fmt.Println(task)
 }
 ```
 
