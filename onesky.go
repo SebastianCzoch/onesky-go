@@ -22,7 +22,7 @@ import (
 // APIAddress is https address to OneSky API
 const APIAddress = "https://platform.api.onesky.io"
 
-// API Version is OneSky API version which will be used
+// APIVersion is OneSky API version which will be used
 const APIVersion = "1"
 
 // Client is basics struct for this package contains Secret, APIKey and ProjectID which is needed to authorize in OneSky service
@@ -65,8 +65,9 @@ type listFilesResponse struct {
 	Data []FileData `json:"data"`
 }
 
+// TaskData is a struct which contains informations about import task
 type TaskData struct {
-	ID                  int64       "0"
+	ID                  int64
 	OriginalID          interface{} `json:"id"`
 	File                TaskFile    `json:"file"`
 	StringCount         int         `json:"string_count"`
@@ -75,6 +76,8 @@ type TaskData struct {
 	CreateddAt          string      `json:"created_at"`
 	CreateddAtTimestamp int         `json:"created_at_timestamp"`
 }
+
+// Language is a struct which contains informations about locale
 type Language struct {
 	Code         string `json:"code"`
 	EnglishName  string `json:"english_name"`
@@ -83,29 +86,38 @@ type Language struct {
 	Locale       string `json:"locale"`
 	Region       string `json:"region"`
 }
+
+// TaskFile is a struct which contains informations about file of import task
 type TaskFile struct {
 	Name   string   `json:"name"`
 	Format string   `json:"format"`
 	Locale Language `json:"locale"`
 }
+
+// ImportTasksResponse is a struct which contains informations about the response from list import tasks API
 type ImportTasksResponse struct {
 	Data []TaskData `json:"data"`
 }
+
+// ImportTaskResponse is a struct which contains informations about the response from show an import task API
 type ImportTaskResponse struct {
 	Data TaskData `json:"data"`
 }
 
+// UploadData is a struct which contains informations about uploaded file
 type UploadData struct {
 	Name     string   `json:"name"`
 	Format   string   `json:"format"`
 	Language Language `json:"language"`
 	Import   TaskData `json:"import"`
 }
+
+// UploadResponse is a struct which contains informations about the response from upload file API
 type UploadResponse struct {
 	Data UploadData `json:"data"`
 }
 
-// Convert interface{} to int
+// ConvertInt : Convert interface{} to int
 func ConvertInt(in interface{}) (int64, error) {
 	switch in.(type) {
 	case string:
@@ -135,7 +147,7 @@ func ConvertInt(in interface{}) (int64, error) {
 	}
 }
 
-// show an import task. Parameters: import_id
+// ImportTask : Show an import task. Parameters: import_id
 func (c *Client) ImportTask(importID int64) (TaskData, error) {
 	endpoint, err := getEndpoint("importTask")
 	if err != nil {
@@ -173,7 +185,7 @@ func (c *Client) ImportTask(importID int64) (TaskData, error) {
 	return aux.Data, nil
 }
 
-// list import tasks. Parameters: page: 1, per_page: 50, status: [all|completed|in-progress|failed]
+// ImportTasks : List import tasks. Parameters: page: 1, per_page: 50, status: [all|completed|in-progress|failed]
 // tasks, err := onesky.ImportTasks(map[string]interface{}{"per_page": 50, "status": "in-progress"})
 func (c *Client) ImportTasks(params map[string]interface{}) ([]TaskData, error) {
 	endpoint, err := getEndpoint("importTasks")
@@ -210,9 +222,10 @@ func (c *Client) ImportTasks(params map[string]interface{}) ([]TaskData, error) 
 	if err != nil {
 		return nil, err
 	}
-	for i, _ := range aux.Data {
+	for i := range aux.Data {
 		task := &aux.Data[i]
 		if id, err := ConvertInt(task.OriginalID); err == nil {
+			// fmt.Printf("\n%T, %v, %T\n", id, id, task.OriginalID)
 			task.ID = id
 		}
 	}

@@ -14,9 +14,12 @@ import (
 )
 
 var testEndpoints = map[string]apiEndpoint{
-	"getFile":    apiEndpoint{"projects/%d/translations", "GET"},
-	"postFile":   apiEndpoint{"projects/%d/files", "POST"},
-	"deleteFile": apiEndpoint{"projects/%d/files", "DELETE"},
+	"getFile":     apiEndpoint{"projects/%d/translations", "GET"},
+	"postFile":    apiEndpoint{"projects/%d/files", "POST"},
+	"deleteFile":  apiEndpoint{"projects/%d/files", "DELETE"},
+	"listFiles":   apiEndpoint{"projects/%d/files", "GET"},
+	"importTasks": apiEndpoint{"projects/%d/import-tasks", "GET"},
+	"importTask":  apiEndpoint{"projects/%d/import-tasks/%d", "GET"},
 }
 
 // TestFull is testing full method on apiEndpoint struct
@@ -152,4 +155,90 @@ func TestDownloadFileWithSuccess(t *testing.T) {
 	assert.Nil(t, err)
 
 	assert.Equal(t, `test: translatedTest`, res)
+}
+
+func TestImportTasksWithFailure(t *testing.T) {
+	httpmock.Activate()
+	defer httpmock.DeactivateAndReset()
+	httpmock.RegisterNoResponder(httpmock.NewStringResponder(500, ""))
+	client := Client{APIKey: "abcdef", Secret: "abcdef", ProjectID: 1}
+
+	_, err := client.ImportTasks(map[string]interface{}{"page": 1, "per_page": 50, "status": "all"})
+	assert.Equal(t, err, fmt.Errorf("bad status: %d", 500))
+}
+
+func TestImportTasksWithSuccess(t *testing.T) {
+	httpmock.Activate()
+	defer httpmock.DeactivateAndReset()
+	httpmock.RegisterNoResponder(httpmock.NewStringResponder(200, `{"meta":{"status":200},"data":[{"id":"177","file":{"name":"string2.po"},"status":"in-progress","created_at":"2013-10-07T15:25:00+0000","created_at_timestamp":1381159500},{"id":"176","file":{"name":"string.po"},"status":"in-progress","created_at":"2013-10-07T15:27:10+0000","created_at_timestamp":1381159630}]}`))
+	client := Client{APIKey: "abcdef", Secret: "abcdef", ProjectID: 1}
+
+	res, err := client.ImportTasks(map[string]interface{}{"page": 1, "per_page": 50, "status": "in-progress"})
+	assert.Nil(t, err)
+
+	assert.Equal(t,
+		[]TaskData{
+			TaskData{
+				ID:         177,
+				OriginalID: "177",
+				File: TaskFile{
+					Name: "string2.po",
+				},
+				Status:              "in-progress",
+				CreateddAt:          "2013-10-07T15:25:00+0000",
+				CreateddAtTimestamp: 1381159500,
+			},
+			TaskData{
+				ID:         176,
+				OriginalID: "176",
+				File: TaskFile{
+					Name: "string.po",
+				},
+				Status:              "in-progress",
+				CreateddAt:          "2013-10-07T15:27:10+0000",
+				CreateddAtTimestamp: 1381159630,
+			},
+		}, res)
+}
+
+func TestImportTaskWithFailure(t *testing.T) {
+	httpmock.Activate()
+	defer httpmock.DeactivateAndReset()
+	httpmock.RegisterNoResponder(httpmock.NewStringResponder(500, ""))
+	client := Client{APIKey: "abcdef", Secret: "abcdef", ProjectID: 1}
+
+	_, err := client.ImportTask(1)
+	assert.Equal(t, err, fmt.Errorf("bad status: %d", 500))
+}
+func TestImportTaskWithSuccess(t *testing.T) {
+	httpmock.Activate()
+	httpmock.Activate()
+	defer httpmock.DeactivateAndReset()
+	httpmock.RegisterNoResponder(httpmock.NewStringResponder(200, `{"meta":{"status":200},"data":{"id":176,"file":{"name":"string.po","format":"GNU_PO","locale":{"code":"en-US","english_name":"English (United States)","local_name":"English (United States)","locale":"en","region":"US"}},"string_count":236,"word_count":1260,"status":"in-progress","created_at":"2013-10-07T15:27:10+0000","created_at_timestamp":1381159630}}`))
+	client := Client{APIKey: "abcdef", Secret: "abcdef", ProjectID: 1}
+
+	res, err := client.ImportTask(1)
+	assert.Nil(t, err)
+
+	assert.Equal(t,
+		TaskData{
+			ID:         176,
+			OriginalID: float64(176),
+			File: TaskFile{
+				Name:   "string.po",
+				Format: "GNU_PO",
+				Locale: Language{
+					Code:        "en-US",
+					EnglishName: "English (United States)",
+					LocalName:   "English (United States)",
+					Locale:      "en",
+					Region:      "US",
+				},
+			},
+			StringCount:         236,
+			WordCount:           1260,
+			Status:              "in-progress",
+			CreateddAt:          "2013-10-07T15:27:10+0000",
+			CreateddAtTimestamp: 1381159630,
+		}, res)
 }
