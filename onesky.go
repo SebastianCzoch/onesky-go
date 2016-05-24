@@ -117,8 +117,8 @@ type UploadResponse struct {
 	Data UploadData `json:"data"`
 }
 
-// ConvertInt : Convert interface{} to int
-func ConvertInt(in interface{}) (int64, error) {
+// convertToInt64 : Convert interface{} to int64
+func convertToInt64(in interface{}) (int64, error) {
 	switch in.(type) {
 	case string:
 		return strconv.ParseInt(in.(string), 10, 64)
@@ -177,7 +177,7 @@ func (c *Client) ImportTask(importID int64) (TaskData, error) {
 	if err != nil {
 		return TaskData{}, err
 	}
-	if i, err := ConvertInt(aux.Data.OriginalID); err == nil {
+	if i, err := convertToInt64(aux.Data.OriginalID); err == nil {
 		// fmt.Printf("%T, %v", i, i)
 		aux.Data.ID = i
 	}
@@ -224,7 +224,7 @@ func (c *Client) ImportTasks(params map[string]interface{}) ([]TaskData, error) 
 	}
 	for i := range aux.Data {
 		task := &aux.Data[i]
-		if id, err := ConvertInt(task.OriginalID); err == nil {
+		if id, err := convertToInt64(task.OriginalID); err == nil {
 			// fmt.Printf("\n%T, %v, %T\n", id, id, task.OriginalID)
 			task.ID = id
 		}
@@ -356,7 +356,7 @@ func (c *Client) UploadFile(file, fileFormat, locale string) (UploadData, error)
 	if err != nil {
 		return UploadData{}, err
 	}
-	if i, err := ConvertInt(aux.Data.Import.OriginalID); err == nil {
+	if i, err := convertToInt64(aux.Data.Import.OriginalID); err == nil {
 		aux.Data.Import.ID = i
 	}
 
