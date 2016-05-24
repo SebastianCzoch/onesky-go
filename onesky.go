@@ -22,7 +22,7 @@ import (
 // APIAddress is https address to OneSky API
 const APIAddress = "https://platform.api.onesky.io"
 
-// API Version is OneSky API version which will be used
+// APIVersion is OneSky API version which will be used
 const APIVersion = "1"
 
 // Client is basics struct for this package contains Secret, APIKey and ProjectID which is needed to authorize in OneSky service
@@ -38,15 +38,18 @@ type apiEndpoint struct {
 }
 
 var apiEndpoints = map[string]apiEndpoint{
-	"getFile":    apiEndpoint{"projects/%d/translations", "GET"},
-	"postFile":   apiEndpoint{"projects/%d/files", "POST"},
-	"deleteFile": apiEndpoint{"projects/%d/files", "DELETE"},
-	"listFiles":  apiEndpoint{"projects/%d/files", "GET"},
+	"getFile":     apiEndpoint{"projects/%d/translations", "GET"},
+	"postFile":    apiEndpoint{"projects/%d/files", "POST"},
+	"deleteFile":  apiEndpoint{"projects/%d/files", "DELETE"},
+	"listFiles":   apiEndpoint{"projects/%d/files", "GET"},
+	"importTasks": apiEndpoint{"projects/%d/import-tasks", "GET"},
+	"importTask":  apiEndpoint{"projects/%d/import-tasks/%d", "GET"},
 }
 
 // FileData is a struct which contains informations about file uploaded to OneSky service
 type FileData struct {
 	Name                string     `json:"name"`
+	FileName            string     `json:"file_name"`
 	StringCount         int        `json:"string_count"`
 	LastImport          LastImport `json:"last_import"`
 	UpoladedAt          string     `json:"uploaded_at"`
@@ -58,9 +61,176 @@ type LastImport struct {
 	ID     int    `json:"id"`
 	Status string `json:"status"`
 }
-
 type listFilesResponse struct {
 	Data []FileData `json:"data"`
+}
+
+// TaskData is a struct which contains informations about import task
+type TaskData struct {
+	ID                  int64
+	OriginalID          interface{} `json:"id"`
+	File                TaskFile    `json:"file"`
+	StringCount         int         `json:"string_count"`
+	WordCount           int         `json:"word_count"`
+	Status              string      `json:"status"`
+	CreateddAt          string      `json:"created_at"`
+	CreateddAtTimestamp int         `json:"created_at_timestamp"`
+}
+
+// Language is a struct which contains informations about locale
+type Language struct {
+	Code         string `json:"code"`
+	EnglishName  string `json:"english_name"`
+	LocalName    string `json:"local_name"`
+	CustomLocale string `json:"custom_locale"`
+	Locale       string `json:"locale"`
+	Region       string `json:"region"`
+}
+
+// TaskFile is a struct which contains informations about file of import task
+type TaskFile struct {
+	Name   string   `json:"name"`
+	Format string   `json:"format"`
+	Locale Language `json:"locale"`
+}
+
+// ImportTasksResponse is a struct which contains informations about the response from list import tasks API
+type ImportTasksResponse struct {
+	Data []TaskData `json:"data"`
+}
+
+// ImportTaskResponse is a struct which contains informations about the response from show an import task API
+type ImportTaskResponse struct {
+	Data TaskData `json:"data"`
+}
+
+// UploadData is a struct which contains informations about uploaded file
+type UploadData struct {
+	Name     string   `json:"name"`
+	Format   string   `json:"format"`
+	Language Language `json:"language"`
+	Import   TaskData `json:"import"`
+}
+
+// UploadResponse is a struct which contains informations about the response from upload file API
+type UploadResponse struct {
+	Data UploadData `json:"data"`
+}
+
+// convertToInt64 : Convert interface{} to int64
+func convertToInt64(in interface{}) (int64, error) {
+	switch in.(type) {
+	case string:
+		return strconv.ParseInt(in.(string), 10, 64)
+	case int:
+		return int64(in.(int)), nil
+	case int16:
+		return int64(in.(int16)), nil
+	case int32:
+		return int64(in.(int32)), nil
+	case int64:
+		return in.(int64), nil
+	case uint:
+		return int64(in.(uint)), nil
+	case uint16:
+		return int64(in.(uint16)), nil
+	case uint32:
+		return int64(in.(uint32)), nil
+	case uint64:
+		return int64(in.(uint64)), nil
+	case float32:
+		return int64(in.(float32)), nil
+	case float64:
+		return int64(in.(float64)), nil
+	default:
+		return 0, fmt.Errorf("%s: %v", "Unable to convert value", in)
+	}
+}
+
+// ImportTask : Show an import task. Parameters: import_id
+func (c *Client) ImportTask(importID int64) (TaskData, error) {
+	endpoint, err := getEndpoint("importTask")
+	if err != nil {
+		return TaskData{}, err
+	}
+	values := url.Values{}
+	urlStr, err := endpoint.full(c, values, importID)
+	if err != nil {
+		return TaskData{}, err
+	}
+
+	res, err := makeRequest(endpoint.method, urlStr, nil, "")
+	if err != nil {
+		return TaskData{}, err
+	}
+
+	if res.StatusCode != http.StatusOK {
+		return TaskData{}, fmt.Errorf("bad status: %s", res.Status)
+	}
+
+	body, err := getResponseBodyAsString(res)
+	if err != nil {
+		return TaskData{}, err
+	}
+	aux := ImportTaskResponse{}
+	err = json.Unmarshal([]byte(body), &aux)
+	if err != nil {
+		return TaskData{}, err
+	}
+	if i, err := convertToInt64(aux.Data.OriginalID); err == nil {
+		// fmt.Printf("%T, %v", i, i)
+		aux.Data.ID = i
+	}
+
+	return aux.Data, nil
+}
+
+// ImportTasks : List import tasks. Parameters: page: 1, per_page: 50, status: [all|completed|in-progress|failed]
+// tasks, err := onesky.ImportTasks(map[string]interface{}{"per_page": 50, "status": "in-progress"})
+func (c *Client) ImportTasks(params map[string]interface{}) ([]TaskData, error) {
+	endpoint, err := getEndpoint("importTasks")
+	if err != nil {
+		return nil, err
+	}
+	values := url.Values{}
+	values.Set("page", "1")
+	values.Set("per_page", "50")
+	values.Set("status", "all")
+	for k, v := range params {
+		values.Set(k, fmt.Sprintf("%v", v))
+	}
+	urlStr, err := endpoint.full(c, values)
+	if err != nil {
+		return nil, err
+	}
+
+	res, err := makeRequest(endpoint.method, urlStr, nil, "")
+	if err != nil {
+		return nil, err
+	}
+
+	if res.StatusCode != http.StatusOK {
+		return nil, fmt.Errorf("bad status: %s", res.Status)
+	}
+
+	body, err := getResponseBodyAsString(res)
+	if err != nil {
+		return nil, err
+	}
+	aux := ImportTasksResponse{}
+	err = json.Unmarshal([]byte(body), &aux)
+	if err != nil {
+		return nil, err
+	}
+	for i := range aux.Data {
+		task := &aux.Data[i]
+		if id, err := convertToInt64(task.OriginalID); err == nil {
+			// fmt.Printf("\n%T, %v, %T\n", id, id, task.OriginalID)
+			task.ID = id
+		}
+	}
+
+	return aux.Data, nil
 }
 
 // ListFiles is method on Client struct which download form OneSky service informations about uploaded files
@@ -134,10 +304,10 @@ func (c *Client) DownloadFile(fileName, locale string) (string, error) {
 }
 
 // UploadFile is method on Client struct which upload file to OneSky service
-func (c *Client) UploadFile(file, fileFormat, locale string) error {
+func (c *Client) UploadFile(file, fileFormat, locale string) (UploadData, error) {
 	endpoint, err := getEndpoint("postFile")
 	if err != nil {
-		return err
+		return UploadData{}, err
 	}
 
 	v := url.Values{}
@@ -145,38 +315,52 @@ func (c *Client) UploadFile(file, fileFormat, locale string) error {
 	v.Set("file_format", fileFormat)
 	urlStr, err := endpoint.full(c, v)
 	if err != nil {
-		return err
+		return UploadData{}, err
 	}
 
 	var b bytes.Buffer
 	w := multipart.NewWriter(&b)
 	f, err := os.Open(file)
 	if err != nil {
-		return err
+		return UploadData{}, err
 	}
 	defer w.Close()
 
 	fw, err := w.CreateFormFile("file", file)
 	if err != nil {
-		return err
+		return UploadData{}, err
 	}
 
 	if _, err = io.Copy(fw, f); err != nil {
-		return err
+		return UploadData{}, err
 	}
 
 	w.Close()
 
 	res, err := makeRequest(endpoint.method, urlStr, &b, w.FormDataContentType())
 	if err != nil {
-		return err
+		return UploadData{}, err
 	}
 
 	if res.StatusCode != http.StatusCreated {
-		return fmt.Errorf("bad status: %s", res.Status)
+		return UploadData{}, fmt.Errorf("bad status: %s", res.Status)
 	}
 
-	return nil
+	body, err := getResponseBodyAsString(res)
+	if err != nil {
+		return UploadData{}, err
+	}
+
+	aux := UploadResponse{}
+	err = json.Unmarshal([]byte(body), &aux)
+	if err != nil {
+		return UploadData{}, err
+	}
+	if i, err := convertToInt64(aux.Data.Import.OriginalID); err == nil {
+		aux.Data.Import.ID = i
+	}
+
+	return aux.Data, nil
 }
 
 // DeleteFile is method on Client struct which remove file from OneSky service
@@ -240,8 +424,9 @@ func (c *Client) getAuthHashAndTime() (string, string) {
 	return hex.EncodeToString(hasher.Sum(nil)), time
 }
 
-func (e *apiEndpoint) full(c *Client, additionalArgs url.Values) (string, error) {
-	urlWithProjectID := fmt.Sprintf(e.path, c.ProjectID)
+func (e *apiEndpoint) full(c *Client, additionalArgs url.Values, extends ...interface{}) (string, error) {
+	extends = append([]interface{}{c.ProjectID}, extends...)
+	urlWithProjectID := fmt.Sprintf(e.path, extends...)
 	address, err := url.Parse(APIAddress + "/" + APIVersion + "/" + urlWithProjectID)
 	if err != nil {
 		return "", err

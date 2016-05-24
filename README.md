@@ -34,7 +34,7 @@ import (
 
 func main() {
 	onesky := onesky.Client{APIKey: "abcdef", Secret: "abcdef", ProjectID: 1}
-	err := onesky.UploadFile("messages.yml", "YAML", "en-US")
+	_, err := onesky.UploadFile("messages.yml", "YAML", "en-US")
 	if err != nil {
 		fmt.Println("Can not upload file")
 	}
@@ -79,6 +79,47 @@ func main() {
 }
 ```
 
+### Example 5 - List import tasks
+```
+package main
+
+import (
+	"fmt"
+	"github.com/SebastianCzoch/onesky-go"
+)
+
+func main() {
+	onesky := onesky.Client{APIKey: "abcdef", Secret: "abcdef", ProjectID: 1}
+	list, err := onesky.ImportTasks(map[string]interface{}{
+		"per_page": 50,
+		"status": "completed", // all, completed, in-progress, failed
+	})
+	if err != nil {
+		fmt.Println("Can not download list of import tasks")
+	}
+	fmt.Println(list)
+}
+```
+
+### Example 6 - Show an import task
+```
+package main
+
+import (
+	"fmt"
+	"github.com/SebastianCzoch/onesky-go"
+)
+
+func main() {
+	onesky := onesky.Client{APIKey: "abcdef", Secret: "abcdef", ProjectID: 1}
+	task, err := onesky.ImportTask(773572) // import id
+	if err != nil {
+		fmt.Println(err)
+	}
+	fmt.Println(task)
+}
+```
+
 ## Install
 
 ```
@@ -98,7 +139,7 @@ Downloads translation file from OneSky.
 
 Returns file content via string.
 
-### (c *Client) UploadFile(file, fileFormat, locale string) error
+### (c *Client) UploadFile(file, fileFormat, locale string) (UploadData, error)
 Upload translation file to OneSky.
 * `file` should be a full path to file
 
@@ -107,6 +148,12 @@ Permanently remove file from OneSky service (with translations)!
 
 ### (c *Client) ListFiles(page, perPage int) ([]FileData, error)
 Get informations about files uploaded to OneSky
+
+### (c *Client) ImportTasks(params) ([]TaskData, error)
+List import tasks. (Default params: `{"page": 1, "per_page": 50, "status": "all"}`)
+
+### (c *Client) ImportTask(importID) (TaskData, error)
+Show an import task.
 
 ## Tests
 
