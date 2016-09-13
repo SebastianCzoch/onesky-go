@@ -14,12 +14,13 @@ import (
 )
 
 var testEndpoints = map[string]apiEndpoint{
-	"getFile":     apiEndpoint{"projects/%d/translations", "GET"},
-	"postFile":    apiEndpoint{"projects/%d/files", "POST"},
-	"deleteFile":  apiEndpoint{"projects/%d/files", "DELETE"},
-	"listFiles":   apiEndpoint{"projects/%d/files", "GET"},
-	"importTasks": apiEndpoint{"projects/%d/import-tasks", "GET"},
-	"importTask":  apiEndpoint{"projects/%d/import-tasks/%d", "GET"},
+	"getFile":               apiEndpoint{"projects/%d/translations", "GET"},
+	"postFile":              apiEndpoint{"projects/%d/files", "POST"},
+	"deleteFile":            apiEndpoint{"projects/%d/files", "DELETE"},
+	"listFiles":             apiEndpoint{"projects/%d/files", "GET"},
+	"importTasks":           apiEndpoint{"projects/%d/import-tasks", "GET"},
+	"importTask":            apiEndpoint{"projects/%d/import-tasks/%d", "GET"},
+	"getTranslationsStatus": apiEndpoint{"projects/%d/translations/status", "GET"},
 }
 
 // TestFull is testing full method on apiEndpoint struct
@@ -240,5 +241,40 @@ func TestImportTaskWithSuccess(t *testing.T) {
 			Status:              "in-progress",
 			CreateddAt:          "2013-10-07T15:27:10+0000",
 			CreateddAtTimestamp: 1381159630,
+		}, res)
+}
+
+func TestGetTranslationsStatusWithFailure(t *testing.T) {
+	httpmock.Activate()
+	defer httpmock.DeactivateAndReset()
+	httpmock.RegisterNoResponder(httpmock.NewStringResponder(500, ""))
+	client := Client{APIKey: "abcdef", Secret: "abcdef", ProjectID: 1}
+
+	_, err := client.GetTranslationsStatus()
+	assert.Equal(t, err, fmt.Errorf("bad status: %d", 500))
+}
+func TestGetTranslationsStatusWithSuccess(t *testing.T) {
+	httpmock.Activate()
+	defer httpmock.DeactivateAndReset()
+	httpmock.RegisterNoResponder(httpmock.NewStringResponder(200, `{"meta":{"status":200},"data":{"file_name":"string.po","locale":{"code":"ja-JP","english_name":"Japanese","local_name":"\u65e5\u672c\u8a9e","locale":"ja","region":"JP"},"progress":"92%","string_count":1359,"word_count":3956}}`))
+	client := Client{APIKey: "abcdef", Secret: "abcdef", ProjectID: 1}
+
+	res, err := client.GetTranslationsStatus()
+	assert.Nil(t, err)
+
+	assert.Equal(t,
+		TranslationsStatus{
+			FileName: "string.po",
+			Locale: Language{
+				Code:         "ja-JP",
+				EnglishName:  "Japanese",
+				LocalName:    "日本語",
+				CustomLocale: "",
+				Locale:       "ja",
+				Region:       "JP",
+			},
+			Progress:    "92%",
+			StringCount: 1359,
+			WordCount:   3956,
 		}, res)
 }

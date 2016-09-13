@@ -120,6 +120,25 @@ func main() {
 }
 ```
 
+### Example 7 - Get a project's translations status
+```
+package main
+
+import (
+	"fmt"
+	"github.com/SebastianCzoch/onesky-go"
+)
+
+func main() {
+	onesky := onesky.Client{APIKey: "abcdef", Secret: "abcdef", ProjectID: 1}
+	status, err := onesky.GetTranslationsStatus()
+	if err != nil {
+		fmt.Println(err)
+	}
+	fmt.Println(status)
+}
+```
+
 ## Install
 
 ```
@@ -154,6 +173,9 @@ List import tasks. (Default params: `{"page": 1, "per_page": 50, "status": "all"
 
 ### (c *Client) ImportTask(importID) (TaskData, error)
 Show an import task.
+
+### (c *Client) GetTranslationsStatus() (TranslationsStatus, error)
+Shows a project's translations status.
 
 ## Tests
 

@@ -38,12 +38,13 @@ type apiEndpoint struct {
 }
 
 var apiEndpoints = map[string]apiEndpoint{
-	"getFile":     apiEndpoint{"projects/%d/translations", "GET"},
-	"postFile":    apiEndpoint{"projects/%d/files", "POST"},
-	"deleteFile":  apiEndpoint{"projects/%d/files", "DELETE"},
-	"listFiles":   apiEndpoint{"projects/%d/files", "GET"},
-	"importTasks": apiEndpoint{"projects/%d/import-tasks", "GET"},
-	"importTask":  apiEndpoint{"projects/%d/import-tasks/%d", "GET"},
+	"getFile":               apiEndpoint{"projects/%d/translations", "GET"},
+	"postFile":              apiEndpoint{"projects/%d/files", "POST"},
+	"deleteFile":            apiEndpoint{"projects/%d/files", "DELETE"},
+	"listFiles":             apiEndpoint{"projects/%d/files", "GET"},
+	"importTasks":           apiEndpoint{"projects/%d/import-tasks", "GET"},
+	"importTask":            apiEndpoint{"projects/%d/import-tasks/%d", "GET"},
+	"getTranslationsStatus": apiEndpoint{"products/%d/translations/status", "GET"},
 }
 
 // FileData is a struct which contains informations about file uploaded to OneSky service
@@ -115,6 +116,18 @@ type UploadData struct {
 // UploadResponse is a struct which contains informations about the response from upload file API
 type UploadResponse struct {
 	Data UploadData `json:"data"`
+}
+
+// TranslationsStatus is a struct which contains information about a project's translation status
+type TranslationsStatus struct {
+	FileName    string   `json:"file_name"`
+	Locale      Language `json:"locale"`
+	Progress    string   `json:"progress"`
+	StringCount int64    `json:"string_count"`
+	WordCount   int64    `json:"word_count"`
+}
+type getTranslationsStatusResponse struct {
+	Data TranslationsStatus `json:"data"`
 }
 
 // convertToInt64 : Convert interface{} to int64
@@ -387,6 +400,42 @@ func (c *Client) DeleteFile(fileName string) error {
 	}
 
 	return nil
+}
+
+// GetTranslationsStatus returns information about a project's translation status
+func (c *Client) GetTranslationsStatus() (TranslationsStatus, error) {
+	endpoint, err := getEndpoint("getTranslationsStatus")
+	if err != nil {
+		return TranslationsStatus{}, err
+	}
+
+	v := url.Values{}
+	urlStr, err := endpoint.full(c, v)
+	if err != nil {
+		return TranslationsStatus{}, err
+	}
+
+	res, err := makeRequest(endpoint.method, urlStr, nil, "")
+	if err != nil {
+		return TranslationsStatus{}, err
+	}
+
+	if res.StatusCode != http.StatusOK {
+		return TranslationsStatus{}, fmt.Errorf("bad status: %s", res.Status)
+	}
+
+	body, err := getResponseBodyAsString(res)
+	if err != nil {
+		return TranslationsStatus{}, err
+	}
+
+	aux := getTranslationsStatusResponse{}
+	err = json.Unmarshal([]byte(body), &aux)
+	if err != nil {
+		return TranslationsStatus{}, err
+	}
+
+	return aux.Data, nil
 }
 
 func makeRequest(method, urlStr string, body io.Reader, contentType string) (*http.Response, error) {
