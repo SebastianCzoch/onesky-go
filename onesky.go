@@ -44,7 +44,7 @@ var apiEndpoints = map[string]apiEndpoint{
 	"listFiles":             apiEndpoint{"projects/%d/files", "GET"},
 	"importTasks":           apiEndpoint{"projects/%d/import-tasks", "GET"},
 	"importTask":            apiEndpoint{"projects/%d/import-tasks/%d", "GET"},
-	"getTranslationsStatus": apiEndpoint{"products/%d/translations/status", "GET"},
+	"getTranslationsStatus": apiEndpoint{"projects/%d/translations/status", "GET"},
 }
 
 // FileData is a struct which contains informations about file uploaded to OneSky service
