@@ -403,13 +403,15 @@ func (c *Client) DeleteFile(fileName string) error {
 }
 
 // GetTranslationsStatus returns information about a project's translation status
-func (c *Client) GetTranslationsStatus() (TranslationsStatus, error) {
+func (c *Client) GetTranslationsStatus(fileName, locale string) (TranslationsStatus, error) {
 	endpoint, err := getEndpoint("getTranslationsStatus")
 	if err != nil {
 		return TranslationsStatus{}, err
 	}
 
 	v := url.Values{}
+	v.Set("file_name", fileName)
+	v.Set("locale", locale)
 	urlStr, err := endpoint.full(c, v)
 	if err != nil {
 		return TranslationsStatus{}, err

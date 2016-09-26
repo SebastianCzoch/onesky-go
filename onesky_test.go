@@ -250,7 +250,7 @@ func TestGetTranslationsStatusWithFailure(t *testing.T) {
 	httpmock.RegisterNoResponder(httpmock.NewStringResponder(500, ""))
 	client := Client{APIKey: "abcdef", Secret: "abcdef", ProjectID: 1}
 
-	_, err := client.GetTranslationsStatus()
+	_, err := client.GetTranslationsStatus("string.po", "ja-JP")
 	assert.Equal(t, err, fmt.Errorf("bad status: %d", 500))
 }
 func TestGetTranslationsStatusWithSuccess(t *testing.T) {
@@ -259,7 +259,7 @@ func TestGetTranslationsStatusWithSuccess(t *testing.T) {
 	httpmock.RegisterNoResponder(httpmock.NewStringResponder(200, `{"meta":{"status":200},"data":{"file_name":"string.po","locale":{"code":"ja-JP","english_name":"Japanese","local_name":"\u65e5\u672c\u8a9e","locale":"ja","region":"JP"},"progress":"92%","string_count":1359,"word_count":3956}}`))
 	client := Client{APIKey: "abcdef", Secret: "abcdef", ProjectID: 1}
 
-	res, err := client.GetTranslationsStatus()
+	res, err := client.GetTranslationsStatus("string.po", "ja-JP")
 	assert.Nil(t, err)
 
 	assert.Equal(t,

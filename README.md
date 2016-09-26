@@ -131,7 +131,7 @@ import (
 
 func main() {
 	onesky := onesky.Client{APIKey: "abcdef", Secret: "abcdef", ProjectID: 1}
-	status, err := onesky.GetTranslationsStatus()
+	status, err := onesky.GetTranslationsStatus("string.po", "ja-JP")
 	if err != nil {
 		fmt.Println(err)
 	}
@@ -174,7 +174,7 @@ List import tasks. (Default params: `{"page": 1, "per_page": 50, "status": "all"
 ### (c *Client) ImportTask(importID) (TaskData, error)
 Show an import task.
 
-### (c *Client) GetTranslationsStatus() (TranslationsStatus, error)
+### (c *Client) GetTranslationsStatus(fileName, locale string) (TranslationsStatus, error)
 Shows a project's translations status.
 
 ## Tests
