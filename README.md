@@ -34,7 +34,7 @@ import (
 
 func main() {
 	onesky := onesky.Client{APIKey: "abcdef", Secret: "abcdef", ProjectID: 1}
-	_, err := onesky.UploadFile("messages.yml", "YAML", "en-US")
+	_, err := onesky.UploadFile("messages.yml", "YAML", "en-US", true)
 	if err != nil {
 		fmt.Println("Can not upload file")
 	}
@@ -158,7 +158,7 @@ Downloads translation file from OneSky.
 
 Returns file content via string.
 
-### (c *Client) UploadFile(file, fileFormat, locale string) (UploadData, error)
+### (c *Client) UploadFile(file, fileFormat, locale string, keepStrings bool) (UploadData, error)
 Upload translation file to OneSky.
 * `file` should be a full path to file
 
