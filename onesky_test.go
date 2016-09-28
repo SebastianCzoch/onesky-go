@@ -5,7 +5,10 @@ package onesky
 
 import (
 	"fmt"
+	"io/ioutil"
 	"net/url"
+	"os"
+	"path"
 	"regexp"
 	"testing"
 
@@ -156,6 +159,61 @@ func TestDownloadFileWithSuccess(t *testing.T) {
 	assert.Nil(t, err)
 
 	assert.Equal(t, `test: translatedTest`, res)
+}
+
+func TestUploadFileWithSuccess(t *testing.T) {
+	httpmock.Activate()
+	defer httpmock.DeactivateAndReset()
+	httpmock.RegisterNoResponder(httpmock.NewStringResponder(201, `{"meta":{"status":201},"data":{"name":"string.po","format":"GNU_PO","language":{"code":"en-US","english_name":"English (United States)","local_name":"English (United States)","locale":"en","region":"US"},"import":{"id":154,"created_at":"2013-10-07T15:27:10+0000","created_at_timestamp":1381159630}}}`))
+	client := Client{APIKey: "abcdef", Secret: "abcdef", ProjectID: 1}
+
+	tmpdir, err := ioutil.TempDir("", "")
+	assert.Nil(t, err)
+	defer os.RemoveAll(tmpdir)
+
+	filename := path.Join(tmpdir, "string.po")
+	ioutil.WriteFile(filename, []byte("test"), 0666)
+
+	res, err := client.UploadFile(filename, "GNU_PO", "en_US", true)
+	assert.Nil(t, err)
+
+	assert.Equal(t, UploadData{
+		Name:   "string.po",
+		Format: "GNU_PO",
+		Language: Language{
+			Code:        "en-US",
+			EnglishName: "English (United States)",
+			LocalName:   "English (United States)",
+			Locale:      "en",
+			Region:      "US",
+		},
+		Import: TaskData{
+			ID:                  154,
+			OriginalID:          154.0,
+			CreateddAt:          "2013-10-07T15:27:10+0000",
+			CreateddAtTimestamp: 1381159630,
+		},
+	}, res)
+}
+
+func TestUploadFileWithFailure(t *testing.T) {
+	client := Client{APIKey: "abcdef", Secret: "abcdef", ProjectID: 1}
+
+	tmpdir, err := ioutil.TempDir("", "")
+	assert.Nil(t, err)
+	defer os.RemoveAll(tmpdir)
+
+	filename := path.Join(tmpdir, "not_found")
+	_, err = client.UploadFile(filename, "GNU_PO", "en_US", true)
+	assert.NotNil(t, err)
+
+	httpmock.Activate()
+	defer httpmock.DeactivateAndReset()
+	httpmock.RegisterNoResponder(httpmock.NewStringResponder(500, ""))
+
+	ioutil.WriteFile(filename, []byte("test"), 0666)
+	_, err = client.UploadFile(filename, "GNU_PO", "en_US", true)
+	assert.Equal(t, err, fmt.Errorf("bad status: %d", 500))
 }
 
 func TestImportTasksWithFailure(t *testing.T) {

@@ -317,7 +317,7 @@ func (c *Client) DownloadFile(fileName, locale string) (string, error) {
 }
 
 // UploadFile is method on Client struct which upload file to OneSky service
-func (c *Client) UploadFile(file, fileFormat, locale string) (UploadData, error) {
+func (c *Client) UploadFile(file, fileFormat, locale string, keepStrings bool) (UploadData, error) {
 	endpoint, err := getEndpoint("postFile")
 	if err != nil {
 		return UploadData{}, err
@@ -326,6 +326,7 @@ func (c *Client) UploadFile(file, fileFormat, locale string) (UploadData, error)
 	v := url.Values{}
 	v.Set("locale", locale)
 	v.Set("file_format", fileFormat)
+	v.Set("is_keeping_all_strings", strconv.FormatBool(keepStrings))
 	urlStr, err := endpoint.full(c, v)
 	if err != nil {
 		return UploadData{}, err
