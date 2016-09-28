@@ -326,11 +326,7 @@ func (c *Client) UploadFile(file, fileFormat, locale string, keepStrings bool) (
 	v := url.Values{}
 	v.Set("locale", locale)
 	v.Set("file_format", fileFormat)
-	if keepStrings {
-		v.Set("is_keeping_all_strings", "true") // default
-	} else {
-		v.Set("is_keeping_all_strings", "false")
-	}
+	v.Set("is_keeping_all_strings", strconv.FormatBool(keepStrings))
 	urlStr, err := endpoint.full(c, v)
 	if err != nil {
 		return UploadData{}, err
