@@ -139,6 +139,25 @@ func main() {
 }
 ```
 
+### Example 8 - Get languages
+```
+package main
+
+import (
+	"fmt"
+	"github.com/SebastianCzoch/onesky-go"
+)
+
+func main() {
+	onesky := onesky.Client{APIKey: "abcdef", Secret: "abcdef", ProjectID: 1}
+	languages, err := onesky.GetLanguages()
+	if err != nil {
+		fmt.Println("Can not get languages")
+	}
+	fmt.Println(languages)
+}
+```
+
 ## Install
 
 ```
@@ -176,6 +195,9 @@ Show an import task.
 
 ### (c *Client) GetTranslationsStatus(fileName, locale string) (TranslationsStatus, error)
 Shows a project's translations status.
+
+### (c *Client) GetLanguages() ([]Language, error)
+Get informations about available languages in project
 
 ## Tests
 
