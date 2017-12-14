@@ -24,6 +24,7 @@ var testEndpoints = map[string]apiEndpoint{
 	"importTasks":           apiEndpoint{"projects/%d/import-tasks", "GET"},
 	"importTask":            apiEndpoint{"projects/%d/import-tasks/%d", "GET"},
 	"getTranslationsStatus": apiEndpoint{"projects/%d/translations/status", "GET"},
+	"getLanguages":          apiEndpoint{"projects/%d/languages", "GET"},
 }
 
 // TestFull is testing full method on apiEndpoint struct
@@ -334,5 +335,55 @@ func TestGetTranslationsStatusWithSuccess(t *testing.T) {
 			Progress:    "92%",
 			StringCount: 1359,
 			WordCount:   3956,
+		}, res)
+}
+
+func TestGetLanguagesWithFailure(t *testing.T) {
+	httpmock.Activate()
+	defer httpmock.DeactivateAndReset()
+	httpmock.RegisterNoResponder(httpmock.NewStringResponder(500, ""))
+	client := Client{APIKey: "abcdef", Secret: "abcdef", ProjectID: 1}
+
+	_, err := client.GetLanguages()
+	assert.Equal(t, err, fmt.Errorf("bad status: %d", 500))
+}
+func TestGetLanguagesWithSuccess(t *testing.T) {
+	httpmock.Activate()
+	defer httpmock.DeactivateAndReset()
+	httpmock.RegisterNoResponder(httpmock.NewStringResponder(200, `{"meta":{"status":200,"record_count":17},"data":[{"code":"it","english_name":"Italian","local_name":"Italiano\u0000","custom_locale":"","Locale":"it","region":"","translation_progress":"0.0"},{"code":"de","english_name":"German","local_name":"Deutsch\u0000","custom_locale":"","locale":"de","region":"","translation_progress":"0.0"},{"code":"fr","english_name":"French","local_name":"Français\u0000","custom_locale":"","locale":"fr","region":"","translation_progress":"0.0"}]}`))
+	client := Client{APIKey: "abcdef", Secret: "abcdef", ProjectID: 1}
+
+	res, err := client.GetLanguages()
+	assert.Nil(t, err)
+
+	assert.Equal(t,
+		[]Language{
+			Language{
+				Code:                "it",
+				EnglishName:         "Italian",
+				LocalName:           "Italiano\u0000",
+				CustomLocale:        "",
+				Locale:              "it",
+				Region:              "",
+				TranslationProgress: "0.0",
+			},
+			Language{
+				Code:                "de",
+				EnglishName:         "German",
+				LocalName:           "Deutsch\u0000",
+				CustomLocale:        "",
+				Locale:              "de",
+				Region:              "",
+				TranslationProgress: "0.0",
+			},
+			Language{
+				Code:                "fr",
+				EnglishName:         "French",
+				LocalName:           "Français\u0000",
+				CustomLocale:        "",
+				Locale:              "fr",
+				Region:              "",
+				TranslationProgress: "0.0",
+			},
 		}, res)
 }

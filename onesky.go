@@ -45,6 +45,7 @@ var apiEndpoints = map[string]apiEndpoint{
 	"importTasks":           apiEndpoint{"projects/%d/import-tasks", "GET"},
 	"importTask":            apiEndpoint{"projects/%d/import-tasks/%d", "GET"},
 	"getTranslationsStatus": apiEndpoint{"projects/%d/translations/status", "GET"},
+	"getLanguages":          apiEndpoint{"projects/%d/languages", "GET"},
 }
 
 // FileData is a struct which contains informations about file uploaded to OneSky service
@@ -65,6 +66,9 @@ type LastImport struct {
 type listFilesResponse struct {
 	Data []FileData `json:"data"`
 }
+type getLanguagesResponse struct {
+	Data []Language `json:"data"`
+}
 
 // TaskData is a struct which contains informations about import task
 type TaskData struct {
@@ -80,12 +84,13 @@ type TaskData struct {
 
 // Language is a struct which contains informations about locale
 type Language struct {
-	Code         string `json:"code"`
-	EnglishName  string `json:"english_name"`
-	LocalName    string `json:"local_name"`
-	CustomLocale string `json:"custom_locale"`
-	Locale       string `json:"locale"`
-	Region       string `json:"region"`
+	Code                string `json:"code"`
+	EnglishName         string `json:"english_name"`
+	LocalName           string `json:"local_name"`
+	CustomLocale        string `json:"custom_locale"`
+	Locale              string `json:"locale"`
+	Region              string `json:"region"`
+	TranslationProgress string `json:"translation_progress"`
 }
 
 // TaskFile is a struct which contains informations about file of import task
@@ -436,6 +441,42 @@ func (c *Client) GetTranslationsStatus(fileName, locale string) (TranslationsSta
 	err = json.Unmarshal([]byte(body), &aux)
 	if err != nil {
 		return TranslationsStatus{}, err
+	}
+
+	return aux.Data, nil
+}
+
+// GetLanguages is method on Client struct which download from OneSky service about available languages in project
+func (c *Client) GetLanguages() ([]Language, error) {
+	endpoint, err := getEndpoint("getLanguages")
+	if err != nil {
+		return nil, err
+	}
+
+	v := url.Values{}
+	urlStr, err := endpoint.full(c, v)
+	if err != nil {
+		return nil, err
+	}
+
+	res, err := makeRequest(endpoint.method, urlStr, nil, "")
+	if err != nil {
+		return nil, err
+	}
+
+	if res.StatusCode != http.StatusOK {
+		return nil, fmt.Errorf("bad status: %s", res.Status)
+	}
+
+	body, err := getResponseBodyAsString(res)
+	if err != nil {
+		return nil, err
+	}
+
+	aux := getLanguagesResponse{}
+	err = json.Unmarshal([]byte(body), &aux)
+	if err != nil {
+		return nil, err
 	}
 
 	return aux.Data, nil
