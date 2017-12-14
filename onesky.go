@@ -446,7 +446,7 @@ func (c *Client) GetTranslationsStatus(fileName, locale string) (TranslationsSta
 	return aux.Data, nil
 }
 
-// GetLanguages is method on Client struct which download from OneSky service about available languages in project
+// GetLanguages is method on Client struct which download from OneSky service information about available languages in project
 func (c *Client) GetLanguages() ([]Language, error) {
 	endpoint, err := getEndpoint("getLanguages")
 	if err != nil {
