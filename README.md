@@ -5,6 +5,17 @@
 
 Go utils for working with [OneSky](http://www.oneskyapp.com/) translation service.
 
+## Install
+
+```
+$ go get github.com/SebastianCzoch/onesky-go
+````
+
+or via [Godep](https://github.com/tools/godep)
+```
+$ godep get github.com/SebastianCzoch/onesky-go
+```
+
 ## Examples
 ### Example 1 - Download file
 
@@ -158,17 +169,6 @@ func main() {
 }
 ```
 
-## Install
-
-```
-$ go get github.com/SebastianCzoch/onesky-go
-````
-
-or via [Godep](https://github.com/tools/godep)
-```
-$ godep get github.com/SebastianCzoch/onesky-go
-```
-
 
 ## API
 
@@ -212,7 +212,3 @@ $ go test ./...
 ## Support
 
 Issues for this project should be reported on GitHub issues
-
-Staff responsible for project:
-
-* [Sebastian Czoch <sebastian@czoch.eu>](sebastian@czoch.eu)
